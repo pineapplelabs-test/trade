@@ -1,0 +1,25 @@
+# Hard Risk Limits Configuration (RiskGate)
+# Effective Date: 2026-10-01
+
+market_hours:
+  timezone: "Asia/Kolkata"
+  entry_start_time: "09:20:00"    # No entries in first 5 mins of market open
+  entry_stop_time: "15:00:00"     # No new entries after 15:00
+  force_flat_time: "15:15:00"     # Strict intraday auto-square off
+  session_close_time: "15:30:00"
+
+limits:
+  daily_loss_limit_pct: 2.0       # Halt new entries if account down 2% in a day
+  weekly_loss_limit_pct: 5.0      # Pause if down 5% in rolling week
+  max_drawdown_pct: 10.0          # Stop trading and require manual restart if down 10%
+  max_sector_exposure_pct: 40.0   # Max 40% of capital in a single sector
+
+data_health:
+  stale_tick_timeout_seconds: 3.0 # Halt entries if no index tick for >3 seconds
+
+execution:
+  pessimistic_fill_mode: true
+  execution_delay_min_ms: 500
+  execution_delay_max_ms: 1000
+  slippage_ticks: 1               # Add 1 tick adverse slippage
+  random_rejection_pct: 2.0       # 2% random fill rejection simulation

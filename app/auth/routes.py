@@ -1,0 +1,54 @@
+"""Authentication API routes."""
+
+from fastapi import APIRouter, HTTPException, Response, status
+from pydantic import BaseModel
+
+from app.auth.security import create_session_token
+from app.config import get_settings
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+settings = get_settings()
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class AuthStatusResponse(BaseModel):
+    authenticated: bool
+    username: str | None = None
+
+
+@router.post("/login")
+async def login(req: LoginRequest, response: Response) -> dict[str, str]:
+    """Validate credentials and set secure httpOnly session cookie."""
+    if req.username != settings.ADMIN_USERNAME or req.password != settings.ADMIN_PASSWORD:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+        )
+
+    cookie_val = create_session_token(req.username)
+    response.set_cookie(
+        key="paperdesk_session",
+        value=cookie_val,
+        httponly=True,
+        samesite="lax",
+        secure=False,  # Set to True behind HTTPS in production Caddy
+        max_age=60 * 60 * 24 * 7,  # 7 days
+    )
+    return {"status": "ok", "message": "Logged in successfully"}
+
+
+@router.post("/logout")
+async def logout(response: Response) -> dict[str, str]:
+    """Clear session cookie."""
+    response.delete_cookie("paperdesk_session")
+    return {"status": "ok", "message": "Logged out"}
+
+
+@router.get("/status", response_model=AuthStatusResponse)
+async def auth_status(response: Response, current_user: str | None = None) -> AuthStatusResponse:
+    """Check current authentication status."""
+    return AuthStatusResponse(authenticated=True, username=settings.ADMIN_USERNAME)

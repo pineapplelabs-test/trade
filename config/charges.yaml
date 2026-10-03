@@ -1,0 +1,33 @@
+# Statutory & Brokerage Charges Configuration for NSE Intraday Equity (EQ Series)
+# Source: Zerodha Brokerage Calculator & NSE Circulars
+# Effective Date: 2024-10-01
+# Verified: 2026-10-01
+
+effective_date: "2024-10-01"
+exchange: "NSE"
+segment: "EQUITY_INTRADAY"
+
+brokerage:
+  rate_pct: 0.03            # 0.03% of turnover
+  max_per_order: 20.0       # Capped at ₹20 per executed order
+  min_per_order: 0.0
+
+stt:
+  sell_rate_pct: 0.025      # 0.025% on sell turnover (Intraday Equity)
+  buy_rate_pct: 0.0         # 0% on buy side for intraday
+
+exchange_txn:
+  nse_rate_pct: 0.00297     # 0.00297% on total turnover (NSE Cash)
+
+sebi_charges:
+  rate_per_crore: 10.0      # ₹10 per crore (0.0001% of turnover)
+
+stamp_duty:
+  buy_rate_pct: 0.003       # 0.003% or ₹300 per crore on buy turnover
+  sell_rate_pct: 0.0
+
+gst:
+  rate_pct: 18.0            # 18% on (brokerage + exchange txn + SEBI charges)
+
+investor_protection_fund:
+  nse_rate_pct: 0.0001      # ₹10 per crore

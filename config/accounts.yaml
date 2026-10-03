@@ -1,0 +1,30 @@
+# Paper Trading Accounts Configuration
+# Effective Date: 2026-10-01
+
+accounts:
+  real5k:
+    name: "Real 5K Testbed"
+    starting_capital: 5000.0
+    risk_per_trade_pct: 1.0       # 1% risk per trade = ₹50
+    max_position_pct: 50.0        # Max ₹2,500 allocated to a single stock
+    max_open_positions: 2         # Max 2 concurrent positions
+    ev_min_pct: 0.12              # Minimum expected value threshold
+    description: "Real-world test account for ₹5,000 capital. Tests lot rounding and sub-₹2,500 stock selection."
+
+  tiny:
+    name: "Tiny Friction Torture"
+    starting_capital: 1000.0
+    risk_per_trade_pct: 1.0       # 1% risk per trade = ₹10
+    max_position_pct: 50.0        # Max ₹500 allocated to a single stock
+    max_open_positions: 2
+    ev_min_pct: 0.15              # Higher hurdle due to severe fixed cost drag
+    description: "Stress-test baseline to observe severe share rounding and fixed tax drag on minimal capital."
+
+  shadow:
+    name: "Shadow Institutional"
+    starting_capital: 100000.0
+    risk_per_trade_pct: 0.5       # 0.5% risk per trade = ₹500
+    max_position_pct: 20.0        # Max ₹20,000 per stock
+    max_open_positions: 5
+    ev_min_pct: 0.10              # Standard institutional hurdle
+    description: "Statistical benchmark account with sufficient capital to buy any liquid large-cap."

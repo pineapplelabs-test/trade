@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[dev]"
+
+      - name: Safety Gate: Grep for forbidden real order broker calls
+        run: |
+          echo "Verifying codebase contains NO real order broker calls..."
+          if grep -rn -E "(place_order|modify_order|cancel_order)" app/ config/ scripts/ --exclude-dir=tests; then
+            echo "ERROR: Real broker order placement API detected in codebase! Paper trading violation."
+            exit 1
+          fi
+          echo "Pass: No real order broker calls found."
+
+      - name: Run Ruff Linter
+        run: ruff check .
+
+      - name: Run Mypy Type Checker
+        run: mypy app/
+
+      - name: Run Pytest Suite
+        run: pytest -v

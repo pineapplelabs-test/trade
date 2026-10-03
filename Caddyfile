@@ -1,0 +1,12 @@
+# Caddy Reverse Proxy & Automatic HTTPS Configuration
+# For local dev / IP access:
+:80 {
+    reverse_proxy api:8000
+    encode gzip zstd
+
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer-when-downgrade
+    }
+}
