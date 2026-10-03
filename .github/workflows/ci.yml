@@ -26,7 +26,7 @@ jobs:
       - name: Safety Gate: Grep for forbidden real order broker calls
         run: |
           echo "Verifying codebase contains NO real order broker calls..."
-          if grep -rn -E "(place_order|modify_order|cancel_order)" app/ config/ scripts/ --exclude-dir=tests; then
+          if grep -rn -E "(place_order|modify_order|cancel_order|basket_order)" app/ config/ scripts/ --exclude-dir=tests; then
             echo "ERROR: Real broker order placement API detected in codebase! Paper trading violation."
             exit 1
           fi

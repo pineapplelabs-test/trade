@@ -7,6 +7,7 @@ FORBIDDEN_PATTERNS = [
     r"\bplace_order\b",
     r"\bmodify_order\b",
     r"\bcancel_order\b",
+    r"\bbasket_order\b",
 ]
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent

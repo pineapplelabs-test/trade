@@ -1,33 +1,43 @@
-# Statutory & Brokerage Charges Configuration for NSE Intraday Equity (EQ Series)
-# Source: Zerodha Brokerage Calculator & NSE Circulars
-# Effective Date: 2024-10-01
-# Verified: 2026-10-01
-
 effective_date: "2024-10-01"
 exchange: "NSE"
 segment: "EQUITY_INTRADAY"
 
+# Official Zerodha & NSE Schedule verification:
+# 1. Brokerage: min(0.03%, ₹20) per executed order - applies to BOTH (buy & sell)
+# 2. STT: 0.025% on sell value - applies to SELL ONLY
+# 3. Exchange Txn: 0.00297% of turnover - applies to BOTH (buy & sell)
+# 4. SEBI Fee: ₹10 per crore (0.0001%) - applies to BOTH (buy & sell)
+# 5. Stamp Duty: 0.003% (₹300/Cr) - applies to BUY ONLY
+# 6. GST: 18% on (Brokerage + Exchange Txn + SEBI) - applies to BOTH (buy & sell)
+
 brokerage:
+  applies_to: "BOTH"
   rate_pct: 0.03            # 0.03% of turnover
   max_per_order: 20.0       # Capped at ₹20 per executed order
   min_per_order: 0.0
 
 stt:
+  applies_to: "SELL"
   sell_rate_pct: 0.025      # 0.025% on sell turnover (Intraday Equity)
   buy_rate_pct: 0.0         # 0% on buy side for intraday
 
 exchange_txn:
-  nse_rate_pct: 0.00297     # 0.00297% on total turnover (NSE Cash)
+  applies_to: "BOTH"
+  nse_rate_pct: 0.00297     # 0.00297% on total turnover (NSE Cash revised Oct 2024)
 
 sebi_charges:
+  applies_to: "BOTH"
   rate_per_crore: 10.0      # ₹10 per crore (0.0001% of turnover)
 
 stamp_duty:
+  applies_to: "BUY"
   buy_rate_pct: 0.003       # 0.003% or ₹300 per crore on buy turnover
   sell_rate_pct: 0.0
 
 gst:
+  applies_to: "BOTH"
   rate_pct: 18.0            # 18% on (brokerage + exchange txn + SEBI charges)
 
 investor_protection_fund:
+  applies_to: "BOTH"
   nse_rate_pct: 0.0001      # ₹10 per crore

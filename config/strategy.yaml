@@ -7,7 +7,7 @@ composite_weights:
   order_book_imbalance: 0.15  # 5-level order book depth skew
   vwap_deviation: 0.15        # Current price vs session VWAP
   relative_strength: 0.15     # Performance vs Nifty 50
-  spread_penalty: -0.10       # Penalty for wide bid-ask spread
+  spread_penalty: -0.10       # Negative weight: wider spread reduces composite score
 
 universe_funnel:
   min_daily_turnover_cr: 5.0  # ₹5 Crore minimum average daily traded value
@@ -15,6 +15,20 @@ universe_funnel:
   max_spread_pct: 0.15        # Spread < 0.15% of midpoint
   exclude_surveillance: true  # Exclude ASM / GSM categorized stocks
   exclude_circuits: true      # Exclude stocks hitting upper/lower circuits
+
+trade_limits:
+  cooldown_minutes: 30                # 30-minute cooldown after closing trade on symbol
+  max_trades_per_symbol_day: 2        # Maximum 2 trades per symbol per day
+
+market_timing:
+  entry_start_time: "09:20:00"        # Entry window start
+  entry_cutoff_time: "15:00:00"       # Entry window cutoff
+  force_flat_time: "15:15:00"         # Mandatory intraday square-off
+
+ev_thresholds:
+  tiny_ev_min_pct: 0.15               # ₹1,000 account hurdle (0.15%)
+  real5k_ev_min_pct: 0.12             # ₹5,000 account hurdle (0.12%)
+  shadow_ev_min_pct: 0.10             # ₹1,00,000 account hurdle (0.10%)
 
 strategies:
   orb:
@@ -24,16 +38,19 @@ strategies:
     min_rvol: 1.5
     min_obi: 0.0
     require_above_vwap: true
-    atr_stop_multiple: 1.5
-    atr_target_multiple: 2.5
+    atr_stop_multiple: 1.5            # 1.5 ATR Stop
+    atr_target_multiple: 2.5          # 2.5 ATR Target
     time_stop_minutes: 45
 
   vwap_reversion:
     name: "VWAP Mean Reversion"
     enabled: true
-    min_zscore: -2.0
+    zscore_window_bars: 60            # 60-bar window for rolling z-score
+    min_zscore: -2.0                  # Long entry when z < -2.0 (price below VWAP)
     require_microprice_above_mid: true
     max_vix: 16.0
-    atr_stop_multiple: 1.5
-    atr_target_multiple: 2.0
+    vix_percentile_max: 50.0          # Range day condition: VIX below 50th percentile
+    nifty_absolute_return_max_pct: 0.5 # Range day condition: Nifty flat (<0.5% move)
+    atr_stop_multiple: 1.5            # 1.5 ATR Stop
+    atr_target_multiple: 2.0          # 2.0 ATR Target
     time_stop_minutes: 45

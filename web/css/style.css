@@ -201,6 +201,7 @@ body {
 }
 
 .feed-pill.sim .status-dot { background-color: var(--accent-yellow); }
+.feed-pill.replay .status-dot { background-color: var(--accent-blue); }
 .feed-pill.kite .status-dot { background-color: var(--accent-green-bright); }
 .feed-pill.stale .status-dot { background-color: var(--accent-red-bright); }
 

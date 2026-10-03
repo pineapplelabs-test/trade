@@ -135,6 +135,9 @@ function connectWebSocket() {
   ws.onclose = () => {
     state.wsConnected = false;
     console.warn("WebSocket disconnected. Reconnecting in 2s...");
+    dom.feedText.textContent = "FEED UNAVAILABLE";
+    dom.feedPill.className = "feed-pill stale";
+    dom.headerClock.textContent = "--:--:-- (Offline)";
     if (heartbeatInterval) clearInterval(heartbeatInterval);
     reconnectTimer = setTimeout(connectWebSocket, 2000);
   };
@@ -162,10 +165,19 @@ function handleSnapshot(msg) {
     updateHeaderMetrics();
   }
 
-  // Feed status badge
-  if (msg.feed) {
-    dom.feedText.textContent = msg.feed.toUpperCase();
-    dom.feedPill.className = `feed-pill ${msg.feed}`;
+  // Feed status badge: Clearly distinguish Simulated vs Replay vs Live Kite vs Stale
+  if (msg.stale) {
+    dom.feedText.textContent = "FEED STALE";
+    dom.feedPill.className = "feed-pill stale";
+  } else if (msg.feed === "kite") {
+    dom.feedText.textContent = "LIVE KITE";
+    dom.feedPill.className = "feed-pill kite";
+  } else if (msg.feed === "replay") {
+    dom.feedText.textContent = "HISTORICAL REPLAY";
+    dom.feedPill.className = "feed-pill replay";
+  } else {
+    dom.feedText.textContent = "SIMULATED DATA";
+    dom.feedPill.className = "feed-pill sim";
   }
 }
 
