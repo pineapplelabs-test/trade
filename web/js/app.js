@@ -1,6 +1,6 @@
 /**
  * Paper Desk Vanilla ES Module Application
- * Microsecond UI updates, WebSocket streaming, and state store.
+ * High-performance UI updates, WebSocket streaming, and state store.
  */
 
 // Application State Store
@@ -26,7 +26,7 @@ const dom = {
   modalCancelBtn: document.getElementById("modal-cancel-btn"),
   modalConfirmBtn: document.getElementById("modal-confirm-kill-btn"),
   themeToggleBtn: document.getElementById("theme-toggle-btn"),
-  tabButtons: document.querySelectorAll(".tab-link"),
+  tabButtons: document.querySelectorAll(".nav-tab"),
   tabPanes: document.querySelectorAll(".tab-pane"),
 };
 
@@ -108,7 +108,7 @@ function connectWebSocket() {
 
   ws.onopen = () => {
     state.wsConnected = true;
-    console.log("WebSocket connected to Paper Desk live feed");
+    console.log("WebSocket connected to Paper Desk live telemetry");
     if (reconnectTimer) clearTimeout(reconnectTimer);
 
     // Heartbeat ping every 10s
@@ -134,10 +134,9 @@ function connectWebSocket() {
 
   ws.onclose = () => {
     state.wsConnected = false;
-    console.warn("WebSocket disconnected. Reconnecting in 2s...");
-    dom.feedText.textContent = "FEED UNAVAILABLE";
-    dom.feedPill.className = "feed-pill stale";
-    dom.headerClock.textContent = "--:--:-- (Offline)";
+    dom.feedText.textContent = "Feed Offline";
+    dom.feedPill.className = "feed-status-pill stale";
+    dom.headerClock.textContent = "--:--:--";
     if (heartbeatInterval) clearInterval(heartbeatInterval);
     reconnectTimer = setTimeout(connectWebSocket, 2000);
   };
@@ -150,7 +149,7 @@ function connectWebSocket() {
 function handleSnapshot(msg) {
   // Update Market Clock
   if (msg.clock) {
-    dom.headerClock.textContent = msg.clock;
+    dom.headerClock.textContent = `${msg.clock} IST`;
   }
 
   // Update Account Balances
@@ -165,19 +164,19 @@ function handleSnapshot(msg) {
     updateHeaderMetrics();
   }
 
-  // Feed status badge: Clearly distinguish Simulated vs Replay vs Live Kite vs Stale
+  // Feed status badge
   if (msg.stale) {
-    dom.feedText.textContent = "FEED STALE";
-    dom.feedPill.className = "feed-pill stale";
+    dom.feedText.textContent = "Feed Stale";
+    dom.feedPill.className = "feed-status-pill stale";
   } else if (msg.feed === "kite") {
-    dom.feedText.textContent = "LIVE KITE";
-    dom.feedPill.className = "feed-pill kite";
+    dom.feedText.textContent = "Live Kite";
+    dom.feedPill.className = "feed-status-pill kite";
   } else if (msg.feed === "replay") {
-    dom.feedText.textContent = "HISTORICAL REPLAY";
-    dom.feedPill.className = "feed-pill replay";
+    dom.feedText.textContent = "Replay";
+    dom.feedPill.className = "feed-status-pill replay";
   } else {
-    dom.feedText.textContent = "SIMULATED DATA";
-    dom.feedPill.className = "feed-pill sim";
+    dom.feedText.textContent = "Simulated";
+    dom.feedPill.className = "feed-status-pill sim";
   }
 }
 
@@ -196,12 +195,12 @@ function setupKillSwitch() {
     try {
       const res = await fetch("/api/kill", { method: "POST" });
       const data = await res.json();
-      alert(`Kill switch executed: ${data.message}`);
-      dom.killBtn.textContent = "HALTED";
-      dom.killBtn.classList.remove("btn-danger");
-      dom.killBtn.classList.add("btn-secondary");
+      dom.killBtn.textContent = "Engine Halted";
+      dom.killBtn.style.backgroundColor = "var(--bg-subtle)";
+      dom.killBtn.style.color = "var(--text-secondary)";
+      dom.killBtn.style.borderColor = "var(--border-subtle)";
     } catch (err) {
-      alert("Failed to execute kill switch!");
+      console.error("Failed to execute halt:", err);
     }
   });
 }
@@ -221,7 +220,7 @@ function setupTheme() {
 
 // 6. Settings Interactions (Feed Mode, Pessimistic Toggle)
 function setupSettings() {
-  const modeButtons = document.querySelectorAll(".segment-btn");
+  const modeButtons = document.querySelectorAll(".btn-toggle");
   modeButtons.forEach(btn => {
     btn.addEventListener("click", async () => {
       const mode = btn.getAttribute("data-mode");

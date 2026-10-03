@@ -3,136 +3,147 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Paper Desk — NSE Equity Paper Trading</title>
-  <meta name="description" content="Realistic paper trading execution for NSE equities with exact statutory charges and orderbook depth simulation.">
+  <title>Paper Desk — NSE Equity Trading Terminal</title>
+  <meta name="description" content="Institutional-grade NSE cash equity paper trading terminal with realistic orderbook execution and statutory tax attribution.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
 
-  <!-- Persistent Safety Banner -->
-  <div class="safety-banner" id="safety-banner" role="alert">
-    <div class="banner-content">
-      <span class="banner-badge">PAPER TRADING ONLY</span>
-      <span class="banner-text">Paper money. No real orders are ever sent to Zerodha or exchange.</span>
+  <!-- Persistent Regulatory & Safety Banner -->
+  <aside class="safety-banner" id="safety-banner" aria-label="Paper Trading Notice">
+    <div class="banner-inner">
+      <span class="banner-tag">SIMULATION MODE</span>
+      <span class="banner-message">Virtual capital environment. No real orders are routed to exchanges or broker accounts.</span>
     </div>
-  </div>
+  </aside>
 
-  <!-- Header Navigation & Account Summary -->
-  <header class="app-header">
-    <div class="header-left">
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-left">
       <div class="brand">
-        <span class="brand-icon">⚡</span>
-        <span class="brand-title">Paper Desk</span>
-        <span class="version-tag">v0.1</span>
+        <svg class="brand-logo" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+          <polyline points="16 7 22 7 22 13"></polyline>
+        </svg>
+        <span class="brand-name">PaperDesk</span>
+        <span class="badge-env">NSE CASH</span>
       </div>
 
-      <!-- Account Selector -->
-      <div class="account-selector-wrap">
-        <label for="account-select" class="sr-only">Select Account</label>
-        <select id="account-select" class="account-select">
-          <option value="real5k" selected>real5k (₹5,000)</option>
-          <option value="tiny">tiny (₹1,000)</option>
-          <option value="shadow">shadow (₹1,00,000)</option>
-        </select>
+      <!-- Account Switcher -->
+      <div class="account-dropdown-wrap">
+        <label for="account-select" class="sr-only">Active Account</label>
+        <div class="select-container">
+          <select id="account-select" class="account-dropdown">
+            <option value="real5k" selected>real5k &bull; ₹5,000</option>
+            <option value="tiny">tiny &bull; ₹1,000</option>
+            <option value="shadow">shadow &bull; ₹1,00,000</option>
+          </select>
+          <svg class="dropdown-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
       </div>
     </div>
 
     <!-- Live Telemetry Meters -->
-    <div class="header-center">
-      <div class="metric-card" id="meter-equity">
-        <span class="metric-label">Equity</span>
-        <span class="metric-value font-mono" id="header-equity">₹5,000.00</span>
+    <div class="nav-center">
+      <div class="stat-pill">
+        <span class="stat-pill-label">Total Equity</span>
+        <span class="stat-pill-val font-num" id="header-equity">₹5,000.00</span>
       </div>
-      <div class="metric-card" id="meter-pnl">
-        <span class="metric-label">Day P&amp;L</span>
-        <span class="metric-value font-mono neutral" id="header-day-pnl">₹0.00 (0.00%)</span>
+      <div class="stat-pill">
+        <span class="stat-pill-label">Day P&amp;L</span>
+        <span class="stat-pill-val font-num neutral" id="header-day-pnl">₹0.00 (0.00%)</span>
       </div>
-      <div class="metric-card" id="meter-cash">
-        <span class="metric-label">Available Cash</span>
-        <span class="metric-value font-mono" id="header-cash">₹5,000.00</span>
+      <div class="stat-pill">
+        <span class="stat-pill-label">Available Cash</span>
+        <span class="stat-pill-val font-num" id="header-cash">₹5,000.00</span>
       </div>
-      <div class="metric-card" id="meter-clock">
-        <span class="metric-label">NSE Clock (IST)</span>
-        <span class="metric-value font-mono" id="header-clock">--:--:--</span>
+      <div class="stat-pill">
+        <span class="stat-pill-label">Market Clock</span>
+        <span class="stat-pill-val font-num" id="header-clock">--:--:-- IST</span>
       </div>
     </div>
 
-    <!-- Header Actions & Kill Switch -->
-    <div class="header-right">
-      <div class="feed-pill sim" id="feed-status-pill">
-        <span class="status-dot"></span>
+    <!-- Actions & Controls -->
+    <div class="nav-right">
+      <div class="feed-status-pill sim" id="feed-status-pill">
+        <span class="pulse-dot"></span>
         <span id="feed-status-text">Simulated</span>
       </div>
 
-      <button id="kill-switch-btn" class="btn btn-danger btn-kill" title="Flatten all open positions and halt entries">
-        <span class="btn-icon">🛑</span> KILL SWITCH
+      <button id="kill-switch-btn" class="btn-halt" title="Emergency halt: Flatten positions and stop entries">
+        Emergency Halt
       </button>
 
-      <button id="theme-toggle-btn" class="btn btn-icon-only" aria-label="Toggle dark/light theme" title="Toggle theme">
-        🌓
+      <button id="theme-toggle-btn" class="btn-theme-toggle" aria-label="Toggle theme" title="Switch Theme">
+        <svg class="theme-icon sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
       </button>
     </div>
   </header>
 
-  <!-- Navigation Tabs -->
-  <nav class="tabs-nav" aria-label="Main Navigation">
-    <button class="tab-link active" data-tab="scanner" id="tab-btn-scanner">
-      <span class="tab-icon">🎯</span> Scanner
-    </button>
-    <button class="tab-link" data-tab="positions" id="tab-btn-positions">
-      <span class="tab-icon">💼</span> Positions <span class="badge" id="positions-badge">0</span>
-    </button>
-    <button class="tab-link" data-tab="trades" id="tab-btn-trades">
-      <span class="tab-icon">📜</span> Trades
-    </button>
-    <button class="tab-link" data-tab="performance" id="tab-btn-performance">
-      <span class="tab-icon">📈</span> Performance
-    </button>
-    <button class="tab-link" data-tab="risk" id="tab-btn-risk">
-      <span class="tab-icon">🛡️</span> Risk Gate
-    </button>
-    <button class="tab-link" data-tab="settings" id="tab-btn-settings">
-      <span class="tab-icon">⚙️</span> Settings
-    </button>
+  <!-- Secondary Navigation Tabs -->
+  <nav class="subnav">
+    <div class="subnav-container">
+      <button class="nav-tab active" data-tab="scanner" id="tab-btn-scanner">Scanner</button>
+      <button class="nav-tab" data-tab="positions" id="tab-btn-positions">Positions <span class="tab-count" id="positions-badge">0</span></button>
+      <button class="nav-tab" data-tab="trades" id="tab-btn-trades">Orders &amp; Trades</button>
+      <button class="nav-tab" data-tab="performance" id="tab-btn-performance">Analytics &amp; Edge</button>
+      <button class="nav-tab" data-tab="risk" id="tab-btn-risk">Risk Management</button>
+      <button class="nav-tab" data-tab="settings" id="tab-btn-settings">Settings</button>
+    </div>
   </nav>
 
-  <!-- Main Views Container -->
-  <main class="main-container">
+  <!-- Main Viewports -->
+  <main class="page-body">
 
-    <!-- TAB 1: SCANNER -->
+    <!-- VIEW 1: SCANNER -->
     <section class="tab-pane active" id="pane-scanner">
-      <div class="pane-header">
+      <div class="panel-header">
         <div>
-          <h2>Liquid Universe Scanner</h2>
-          <p class="text-muted">Top ranked NSE equities filtered by turnover, RVOL, OBI, and composite momentum score.</p>
+          <h1 class="panel-title">Market Opportunities</h1>
+          <p class="panel-subtitle">Liquid NSE equities ranked by order book imbalance, relative volume, and VWAP deviation.</p>
         </div>
-        <div class="pane-actions">
-          <span class="badge" id="scanner-count">0 candidates</span>
+        <div class="panel-toolbar">
+          <span class="count-pill" id="scanner-count">0 candidates scanned</span>
         </div>
       </div>
 
-      <div class="table-container">
-        <table class="data-table" id="scanner-table">
+      <div class="table-card">
+        <table class="grid-table" id="scanner-table">
           <thead>
             <tr>
               <th>Symbol</th>
-              <th class="text-right">Price (₹)</th>
-              <th class="text-right">Change %</th>
-              <th class="text-center">Score Bar</th>
-              <th class="text-right">Win Chance</th>
-              <th class="text-right">EV %</th>
+              <th class="text-right">LTP (₹)</th>
+              <th class="text-right">Change</th>
+              <th class="text-center">Score Spectrum</th>
+              <th class="text-right">Win Prob</th>
+              <th class="text-right">Net EV</th>
               <th class="text-right">RVOL</th>
-              <th class="text-right">OBI</th>
+              <th class="text-right">Book Imbalance</th>
               <th class="text-center">Action</th>
             </tr>
           </thead>
           <tbody id="scanner-tbody">
             <tr class="empty-row">
-              <td colspan="9" class="empty-state">
-                <div class="empty-box">
-                  <div class="empty-icon">⏳</div>
-                  <h3>Scanner Engine Initializing</h3>
-                  <p>Awaiting live market data ticks. Top candidates will appear here ranked by composite score.</p>
+              <td colspan="9" class="empty-state-cell">
+                <div class="empty-content">
+                  <div class="empty-spinner"></div>
+                  <h3 class="empty-heading">Listening for Market Ticks</h3>
+                  <p class="empty-sub">Scanning liquid NSE instruments. Screened candidates will populate upon trade qualification.</p>
                 </div>
               </td>
             </tr>
@@ -141,37 +152,36 @@
       </div>
     </section>
 
-    <!-- TAB 2: POSITIONS -->
+    <!-- VIEW 2: POSITIONS -->
     <section class="tab-pane" id="pane-positions">
-      <div class="pane-header">
+      <div class="panel-header">
         <div>
-          <h2>Active Paper Positions</h2>
-          <p class="text-muted">Real-time open positions with live stop-loss, target, and 1-ATR trailing exits.</p>
+          <h1 class="panel-title">Open Positions</h1>
+          <p class="panel-subtitle">Active simulated trades with deterministic ATR stops, targets, and trail levels.</p>
         </div>
       </div>
 
-      <div class="table-container">
-        <table class="data-table" id="positions-table">
+      <div class="table-card">
+        <table class="grid-table" id="positions-table">
           <thead>
             <tr>
               <th>Symbol</th>
-              <th class="text-right">Qty</th>
-              <th class="text-right">Avg Entry</th>
+              <th class="text-right">Quantity</th>
+              <th class="text-right">Avg Buy Price</th>
               <th class="text-right">Current Price</th>
               <th class="text-right">Stop Loss</th>
-              <th class="text-right">Target</th>
-              <th class="text-right">Net P&amp;L</th>
-              <th class="text-center">Opened</th>
-              <th class="text-center">Actions</th>
+              <th class="text-right">Target Price</th>
+              <th class="text-right">Unrealized P&amp;L</th>
+              <th class="text-center">Time Opened</th>
+              <th class="text-center">Execution</th>
             </tr>
           </thead>
           <tbody id="positions-tbody">
             <tr class="empty-row">
-              <td colspan="9" class="empty-state">
-                <div class="empty-box">
-                  <div class="empty-icon">💼</div>
-                  <h3>No Open Positions</h3>
-                  <p>When the rules engine detects qualifying breakouts meeting the positive EV hurdle, executions will show here.</p>
+              <td colspan="9" class="empty-state-cell">
+                <div class="empty-content">
+                  <h3 class="empty-heading">No Active Holdings</h3>
+                  <p class="empty-sub">When strategy conditions trigger and pass RiskGate, simulated positions will appear here.</p>
                 </div>
               </td>
             </tr>
@@ -180,40 +190,39 @@
       </div>
     </section>
 
-    <!-- TAB 3: TRADES -->
+    <!-- VIEW 3: TRADES -->
     <section class="tab-pane" id="pane-trades">
-      <div class="pane-header">
+      <div class="panel-header">
         <div>
-          <h2>Closed Trades Ledger</h2>
-          <p class="text-muted">Complete trade history with exact statutory charge breakdown and loss attribution.</p>
+          <h1 class="panel-title">Trade History &amp; Execution Ledger</h1>
+          <p class="panel-subtitle">Comprehensive ledger with itemized statutory costs, slippage drag, and loss attribution tags.</p>
         </div>
       </div>
 
-      <div class="table-container">
-        <table class="data-table" id="trades-table">
+      <div class="table-card">
+        <table class="grid-table" id="trades-table">
           <thead>
             <tr>
-              <th>Time</th>
+              <th>Timestamp</th>
               <th>Symbol</th>
               <th>Side</th>
-              <th class="text-right">Qty</th>
+              <th class="text-right">Quantity</th>
               <th class="text-right">Entry</th>
               <th class="text-right">Exit</th>
-              <th class="text-right">Gross P&amp;L</th>
-              <th class="text-right">Taxes &amp; Fees</th>
-              <th class="text-right">Net P&amp;L</th>
-              <th class="text-center">R Multiple</th>
-              <th class="text-center">Exit Reason</th>
-              <th class="text-center">Loss Tag</th>
+              <th class="text-right">Gross Return</th>
+              <th class="text-right">Statutory Costs</th>
+              <th class="text-right">Net Return</th>
+              <th class="text-center">R:R Multiple</th>
+              <th class="text-center">Exit Type</th>
+              <th class="text-center">Attribution</th>
             </tr>
           </thead>
           <tbody id="trades-tbody">
             <tr class="empty-row">
-              <td colspan="12" class="empty-state">
-                <div class="empty-box">
-                  <div class="empty-icon">📜</div>
-                  <h3>No Trades Logged Yet</h3>
-                  <p>Closed paper trades will record here with every paisa of brokerage, STT, exchange fees, and GST.</p>
+              <td colspan="12" class="empty-state-cell">
+                <div class="empty-content">
+                  <h3 class="empty-heading">No Trades Executed</h3>
+                  <p class="empty-sub">Executed paper orders will record here with complete brokerage, STT, exchange, and GST breakdown.</p>
                 </div>
               </td>
             </tr>
@@ -222,172 +231,199 @@
       </div>
     </section>
 
-    <!-- TAB 4: PERFORMANCE -->
+    <!-- VIEW 4: PERFORMANCE -->
     <section class="tab-pane" id="pane-performance">
-      <div class="pane-header">
+      <div class="panel-header">
         <div>
-          <h2>Performance &amp; Edge Decay</h2>
-          <p class="text-muted">Honest quantitative metrics after all transaction friction, slippage, and taxes.</p>
+          <h1 class="panel-title">Performance Analytics &amp; Cost Drag</h1>
+          <p class="panel-subtitle">Rigorous statistical evaluation of real net edge after all friction.</p>
         </div>
       </div>
 
-      <div class="metrics-grid">
-        <div class="stat-card">
-          <span class="stat-label">Net Expectancy</span>
-          <span class="stat-value font-mono" id="stat-expectancy">--</span>
-          <span class="stat-sub">Hurdle: >0.15% per trade</span>
+      <div class="stats-overview">
+        <div class="card-metric">
+          <span class="card-metric-label">Net Expectancy</span>
+          <span class="card-metric-val font-num" id="stat-expectancy">--</span>
+          <span class="card-metric-hint">Target: &gt;0.12% per trade</span>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">Profit Factor</span>
-          <span class="stat-value font-mono" id="stat-profit-factor">--</span>
-          <span class="stat-sub">Gross Win / Gross Loss</span>
+        <div class="card-metric">
+          <span class="card-metric-label">Profit Factor</span>
+          <span class="card-metric-val font-num" id="stat-profit-factor">--</span>
+          <span class="card-metric-hint">Gross Gains / Gross Losses</span>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">Win Rate</span>
-          <span class="stat-value font-mono" id="stat-win-rate">--</span>
-          <span class="stat-sub">Break-even: ~45%</span>
+        <div class="card-metric">
+          <span class="card-metric-label">Win Ratio</span>
+          <span class="card-metric-val font-num" id="stat-win-rate">--</span>
+          <span class="card-metric-hint">Break-even hurdle: ~44%</span>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">Cost Drag</span>
-          <span class="stat-value font-mono" id="stat-cost-drag">--</span>
-          <span class="stat-sub">Total Charges / Gross P&amp;L</span>
+        <div class="card-metric">
+          <span class="card-metric-label">Cost Drag Ratio</span>
+          <span class="card-metric-val font-num" id="stat-cost-drag">--</span>
+          <span class="card-metric-hint">Taxes &amp; Fees / Gross Profit</span>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">Max Drawdown</span>
-          <span class="stat-value font-mono" id="stat-max-dd">--</span>
-          <span class="stat-sub">Limit: &lt;10.0%</span>
+        <div class="card-metric">
+          <span class="card-metric-label">Max Drawdown</span>
+          <span class="card-metric-val font-num" id="stat-max-dd">--</span>
+          <span class="card-metric-hint">Circuit breaker: 10.0%</span>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">Variants Tested</span>
-          <span class="stat-value font-mono" id="stat-variants">1</span>
-          <span class="stat-sub">Overfitting Warning Indicator</span>
+        <div class="card-metric">
+          <span class="card-metric-label">Strategy Variants</span>
+          <span class="card-metric-val font-num" id="stat-variants">1</span>
+          <span class="card-metric-hint">Overfitting protection index</span>
         </div>
       </div>
 
-      <div class="chart-container">
-        <h3>Equity Curve</h3>
-        <div id="equity-chart-placeholder" class="chart-box">
+      <div class="chart-card">
+        <div class="chart-header">
+          <h2 class="chart-title">Net Equity Trajectory</h2>
+          <span class="chart-legend">Mark-to-Market (Net of all charges)</span>
+        </div>
+        <div class="chart-canvas-wrap">
           <svg id="equity-svg" class="equity-svg" viewBox="0 0 800 240" preserveAspectRatio="none">
-            <line x1="0" y1="120" x2="800" y2="120" stroke="var(--border-color)" stroke-dasharray="4"/>
-            <text x="400" y="125" text-anchor="middle" fill="var(--text-muted)">Equity curve will plot here dynamically</text>
+            <line x1="0" y1="120" x2="800" y2="120" stroke="var(--border-subtle)" stroke-dasharray="3,3"/>
+            <text x="400" y="125" text-anchor="middle" fill="var(--text-tertiary)" font-size="12">Interactive equity curve will project here upon first completed trade</text>
           </svg>
         </div>
       </div>
     </section>
 
-    <!-- TAB 5: RISK -->
+    <!-- VIEW 5: RISK -->
     <section class="tab-pane" id="pane-risk">
-      <div class="pane-header">
+      <div class="panel-header">
         <div>
-          <h2>Risk Gate Telemetry</h2>
-          <p class="text-muted">Hard limits enforced prior to paper order dispatch. Immune to ML overrides.</p>
+          <h1 class="panel-title">Risk Gate Parameters</h1>
+          <p class="panel-subtitle">Deterministic constraints enforced before order generation. Cannot be bypassed.</p>
         </div>
       </div>
 
-      <div class="risk-grid">
-        <div class="risk-card">
-          <h3>Daily Loss Circuit (2.0% Cap)</h3>
-          <div class="progress-bar-wrap">
-            <div class="progress-bar green" id="risk-daily-bar" style="width: 0%;"></div>
+      <div class="risk-overview">
+        <div class="risk-panel">
+          <div class="risk-panel-top">
+            <span class="risk-title">Daily Drawdown Circuit</span>
+            <span class="risk-status-tag" id="risk-daily-tag">NORMAL</span>
           </div>
-          <p class="text-muted" id="risk-daily-text">Current Day Loss: 0.00% / 2.00% max</p>
-        </div>
-
-        <div class="risk-card">
-          <h3>Open Exposure Cap</h3>
-          <div class="progress-bar-wrap">
-            <div class="progress-bar green" id="risk-exposure-bar" style="width: 0%;"></div>
+          <div class="meter-bar-track">
+            <div class="meter-bar-fill" id="risk-daily-bar" style="width: 0%;"></div>
           </div>
-          <p class="text-muted" id="risk-exposure-text">0 / 2 Max Open Positions</p>
+          <span class="meter-caption" id="risk-daily-text">Current Day Drawdown: 0.00% / 2.00% Limit</span>
         </div>
 
-        <div class="risk-card">
-          <h3>Market Session Windows</h3>
-          <ul class="rule-list">
-            <li><span>09:15 - 09:20 IST</span> <span class="badge">No Entries (Opening Noise)</span></li>
-            <li><span>09:20 - 15:00 IST</span> <span class="badge badge-success">Trading Window Active</span></li>
-            <li><span>15:00 - 15:15 IST</span> <span class="badge">No New Entries</span></li>
-            <li><span>15:15 IST</span> <span class="badge badge-danger">Force Flat All Positions</span></li>
-          </ul>
+        <div class="risk-panel">
+          <div class="risk-panel-top">
+            <span class="risk-title">Concurrent Exposure</span>
+            <span class="risk-status-tag">ACTIVE</span>
+          </div>
+          <div class="meter-bar-track">
+            <div class="meter-bar-fill" id="risk-exposure-bar" style="width: 0%;"></div>
+          </div>
+          <span class="meter-caption" id="risk-exposure-text">0 / 2 Concurrent Position Allocation</span>
+        </div>
+
+        <div class="risk-panel">
+          <div class="risk-panel-top">
+            <span class="risk-title">Session Constraints</span>
+          </div>
+          <div class="session-schedule">
+            <div class="schedule-row">
+              <span class="schedule-time">09:15 - 09:20 IST</span>
+              <span class="schedule-action tag-neutral">Opening Volatility Veto</span>
+            </div>
+            <div class="schedule-row">
+              <span class="schedule-time">09:20 - 15:00 IST</span>
+              <span class="schedule-action tag-active">Order Entry Window</span>
+            </div>
+            <div class="schedule-row">
+              <span class="schedule-time">15:00 - 15:15 IST</span>
+              <span class="schedule-action tag-neutral">Entry Cutoff Active</span>
+            </div>
+            <div class="schedule-row">
+              <span class="schedule-time">15:15 IST</span>
+              <span class="schedule-action tag-alert">Mandatory Force-Flat</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="pane-header" style="margin-top: 2rem;">
-        <h3>Risk Gate Event Log</h3>
+      <div class="panel-header" style="margin-top: 2rem;">
+        <h2 class="panel-title" style="font-size: 1.1rem;">Risk Gate Enforcement Log</h2>
       </div>
-      <div class="table-container">
-        <table class="data-table" id="risk-events-table">
+      <div class="table-card">
+        <table class="grid-table" id="risk-events-table">
           <thead>
             <tr>
               <th>Timestamp</th>
-              <th>Rule</th>
-              <th>Observed Value</th>
-              <th>Limit Threshold</th>
-              <th>Enforced Action</th>
+              <th>Rule Evaluated</th>
+              <th>Observed Metric</th>
+              <th>Threshold</th>
+              <th>Action Enforced</th>
             </tr>
           </thead>
           <tbody id="risk-events-tbody">
             <tr class="empty-row">
-              <td colspan="5" class="empty-state">No risk gate vetoes recorded.</td>
+              <td colspan="5" class="empty-state-cell">No risk vetoes or circuit actions triggered.</td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <!-- TAB 6: SETTINGS -->
+    <!-- VIEW 6: SETTINGS -->
     <section class="tab-pane" id="pane-settings">
-      <div class="pane-header">
+      <div class="panel-header">
         <div>
-          <h2>System Settings &amp; Integrations</h2>
-          <p class="text-muted">Zerodha Kite session management, data feeds, and execution modes.</p>
+          <h1 class="panel-title">System Settings &amp; Data Feeds</h1>
+          <p class="panel-subtitle">Manage Zerodha Kite session, simulation parameters, and pessimistic execution models.</p>
         </div>
       </div>
 
       <div class="settings-grid">
         <div class="settings-card">
-          <h3>Zerodha Kite Connect Session</h3>
-          <p class="text-muted">Kite access tokens expire every morning at 06:00 AM IST and require user login.</p>
-          <div class="status-row">
-            <span>Status:</span>
-            <span class="badge badge-danger" id="kite-auth-status">Token Not Initialized</span>
-          </div>
-          <div class="form-actions" style="margin-top: 1rem;">
-            <a href="/login/kite" class="btn btn-primary" id="kite-login-link">Login to Zerodha Kite</a>
-          </div>
-        </div>
-
-        <div class="settings-card">
-          <h3>Feed Mode Selector</h3>
-          <p class="text-muted">Choose between live Zerodha data, historical replay, or offline simulation.</p>
-          <div class="segmented-control" id="feed-mode-selector">
-            <button class="segment-btn active" data-mode="sim">Simulated</button>
-            <button class="segment-btn" data-mode="replay">Replay</button>
-            <button class="segment-btn" data-mode="kite">Live Kite</button>
+          <h3 class="card-heading">Zerodha Kite Connect Session</h3>
+          <p class="card-desc">Kite authentication tokens are valid for a single trading day and expire at 06:00 AM IST.</p>
+          <div class="auth-box">
+            <div class="auth-meta">
+              <span class="meta-label">Session State</span>
+              <span class="badge-status unauthenticated" id="kite-auth-status">No Active Token</span>
+            </div>
+            <a href="/login/kite" class="btn-primary-action" id="kite-login-link">Connect Kite Session</a>
           </div>
         </div>
 
         <div class="settings-card">
-          <h3>Pessimistic Execution Simulation</h3>
-          <p class="text-muted">Default ON: Enforces 1-tick adverse slippage, 500-1000ms delay, and 2% order drops.</p>
-          <label class="toggle-switch">
-            <input type="checkbox" id="pessimistic-fills-toggle" checked>
-            <span class="slider"></span>
-          </label>
+          <h3 class="card-heading">Active Feed Source</h3>
+          <p class="card-desc">All feeds feed into the exact same canonical market tick contract without downstream differentiation.</p>
+          <div class="control-group" id="feed-mode-selector">
+            <button class="btn-toggle active" data-mode="sim">Simulated</button>
+            <button class="btn-toggle" data-mode="replay">Replay</button>
+            <button class="btn-toggle" data-mode="kite">Live Kite</button>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3 class="card-heading">Pessimistic Order Simulation</h3>
+          <p class="card-desc">Applies 1-tick adverse slippage, 500-1000ms network buffer, and 2% order drop probability.</p>
+          <div class="switch-row">
+            <span class="switch-label">Enforce Worst-Case Fills</span>
+            <label class="switch">
+              <input type="checkbox" id="pessimistic-fills-toggle" checked>
+              <span class="switch-handle"></span>
+            </label>
+          </div>
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- Kill Switch Confirmation Modal -->
-  <div class="modal-backdrop" id="kill-modal" style="display: none;">
-    <div class="modal-box">
-      <h3>⚠️ Confirm Emergency Kill Switch</h3>
-      <p>This action will immediately flatten all open paper positions at market price and halt all subsequent trade entries.</p>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
-        <button class="btn btn-danger" id="modal-confirm-kill-btn">Confirm Kill &amp; Flatten</button>
+  <!-- Emergency Halt Confirmation Modal -->
+  <div class="modal-layer" id="kill-modal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-badge-alert">CRITICAL ACTION</div>
+      <h2 class="modal-title">Confirm Emergency Halt</h2>
+      <p class="modal-text">Executing this command immediately closes all open paper positions at market depth and freezes subsequent trade evaluation.</p>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="modal-cancel-btn">Dismiss</button>
+        <button class="btn-confirm-alert" id="modal-confirm-kill-btn">Halt &amp; Flatten</button>
       </div>
     </div>
   </div>
