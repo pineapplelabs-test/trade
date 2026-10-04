@@ -44,7 +44,7 @@ async def get_scanner_candidates(account: str = Query("tiny")) -> dict[str, Any]
 
     for inst in DEFAULT_INSTRUMENTS:
         # Cash-equity scanner: never treat an index as an equity candidate.
-        if getattr(inst, "exchange", "NSE") != "NSE" or getattr(inst, "series", "EQ") != "EQ":
+        if inst.sector == "Index" or getattr(inst, "exchange", "NSE") != "NSE" or getattr(inst, "series", "EQ") != "EQ":
             continue
         funnel_stats["monitored"] += 1
 
