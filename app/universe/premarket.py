@@ -124,7 +124,8 @@ class PreMarketScanner:
         tradable_survivors: list[PreMarketStockData] = []
         affordable_survivors: list[PreMarketStockData] = []
 
-        total_scanned = 2150  # Total listed NSE equity universe baseline
+        # Fixture catalogs must report their real size; never claim full NSE coverage.
+        total_scanned = len(self.catalog)
 
         for stock in self.catalog:
             # Stage 1: Tradability & Risk Quarantine
@@ -186,7 +187,9 @@ class PreMarketScanner:
 
             # Position sizing for account
             max_alloc = capital * 0.40  # 40% position limit
-            shares = max(1, int(max_alloc // stock.discovered_price))
+            shares = int(max_alloc // stock.discovered_price)
+            if shares < 1:
+                continue
 
             planned_entry = round(stock.discovered_price, 2)
             stop_dist = round(1.5 * stock.atr_14, 2)

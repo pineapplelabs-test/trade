@@ -98,3 +98,20 @@ def test_funnel_rejects_circuit_limit():
     res = funnel.evaluate(inst, tick_circuit, account_capital=100000.0, upper_circuit=120.0)
     assert res.passed is False
     assert "circuit" in res.reason.lower()
+
+
+def test_funnel_enforces_volume_and_turnover() -> None:
+    from app.universe.funnel import FunnelConfig, UniverseFunnel
+
+    inst = InstrumentMeta(token=1, symbol="ILLIQ", name="Illiquid", sector="Tech", tick_size=0.05, active=True, surveillance_flag="NORMAL")
+    funnel = UniverseFunnel(FunnelConfig(min_volume=25000, min_turnover_cr=5.0))
+
+    low_volume = create_sample_tick("ILLIQ", price=100.0, volume=1000)
+    result = funnel.evaluate(inst, low_volume, account_capital=100000.0)
+    assert result.passed is False
+    assert result.stage == "MIN_VOLUME"
+
+    low_turnover = create_sample_tick("ILLIQ", price=100.0, volume=25000)
+    result = funnel.evaluate(inst, low_turnover, account_capital=100000.0)
+    assert result.passed is False
+    assert result.stage == "MIN_TURNOVER"
