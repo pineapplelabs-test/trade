@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     )
 
     # Core
+    ENVIRONMENT: str = "development"  # development | staging | production
     SECRET_KEY: str = "change-this-in-production-to-a-random-secret"
     ENCRYPTION_KEY: str = "W3uG_1H9m3n8xK9Z8gV2eY7wQ6sL5pM4rT2bN1vC0xA="
     ADMIN_USERNAME: str = "trader"
@@ -40,6 +41,13 @@ class Settings(BaseSettings):
     # Optional alerts
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_CHAT_ID: str = ""
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.ENVIRONMENT.lower() in {"production", "prod"}:
+            if self.ADMIN_PASSWORD == "ChangeMeNow123!":
+                raise ValueError("SECURITY VIOLATION: Default ADMIN_PASSWORD cannot be used in production environment.")
+            if "change-this" in self.SECRET_KEY:
+                raise ValueError("SECURITY VIOLATION: Default SECRET_KEY cannot be used in production environment.")
 
 
 def load_yaml(file_path: Path) -> dict[str, Any]:

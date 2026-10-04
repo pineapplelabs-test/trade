@@ -5,16 +5,16 @@
 
 // Initial Liquid Core Universe (NSE Cash Equities)
 const defaultStocks = [
-  { symbol: "BEL", name: "Bharat Electronics", price: 383.10, change: 1.45, score: 1.90, win_prob: 61, ev: 0.24, rvol: 3.2, obi: 0.45, atr: 5.40, action: "Enter", sparkline: [378, 380, 379, 381, 382, 383.1] },
-  { symbol: "RELIANCE", name: "Reliance Industries", price: 1167.70, change: 0.65, score: 2.15, win_prob: 64, ev: 0.28, rvol: 2.4, obi: 0.42, atr: 16.50, action: "Enter", sparkline: [1160, 1162, 1165, 1164, 1166, 1167.7] },
-  { symbol: "TMPV", name: "Tata Motors (TMPV)", price: 279.40, change: 0.85, score: 1.65, win_prob: 58, ev: 0.19, rvol: 2.8, obi: 0.35, atr: 4.20, action: "Enter", sparkline: [275, 276.5, 278, 277.2, 278.9, 279.4] },
-  { symbol: "BHARTIARTL", name: "Bharti Airtel", price: 1741.10, change: 0.85, score: 1.80, win_prob: 59, ev: 0.22, rvol: 1.9, obi: 0.28, atr: 21.00, action: "Enter", sparkline: [1725, 1730, 1728, 1736, 1734, 1741.1] },
-  { symbol: "SBIN", name: "State Bank of India", price: 812.50, change: 1.10, score: 1.40, win_prob: 56, ev: 0.17, rvol: 2.1, obi: 0.20, atr: 11.50, action: "Enter", sparkline: [802, 808, 805, 810, 809, 812.5] },
-  { symbol: "TATASTEEL", name: "Tata Steel", price: 165.20, change: 0.90, score: 0.95, win_prob: 53, ev: 0.14, rvol: 1.8, obi: 0.18, atr: 2.80, action: "Watch", sparkline: [163, 164.5, 163.8, 165, 165.2] },
-  { symbol: "ICICIBANK", name: "ICICI Bank", price: 1310.60, change: 0.60, score: 1.15, win_prob: 54, ev: 0.15, rvol: 1.7, obi: 0.15, atr: 15.60, action: "Watch", sparkline: [1300, 1305, 1302, 1308, 1310.6] },
-  { symbol: "INFY", name: "Infosys", price: 1035.00, change: 0.45, score: 0.60, win_prob: 52, ev: 0.11, rvol: 1.4, obi: 0.08, atr: 14.40, action: "Watch", sparkline: [1028, 1030, 1032, 1034, 1035] },
-  { symbol: "TCS", name: "Tata Consultancy Services", price: 2075.00, change: 0.35, score: 0.70, win_prob: 53, ev: 0.12, rvol: 1.5, obi: 0.10, atr: 28.50, action: "Watch", sparkline: [2060, 2068, 2072, 2075] },
-  { symbol: "HDFCBANK", name: "HDFC Bank", price: 721.20, change: -0.40, score: 0.45, win_prob: 51, ev: 0.08, rvol: 1.3, obi: -0.05, atr: 9.20, action: "Watch", sparkline: [725, 723, 722, 721.2] },
+  { symbol: "BEL", name: "Bharat Electronics", price: 383.10, change: 1.45, score: 0.0, win_prob: null, ev: null, rvol: 1.0, obi: 0.0, atr: 5.40, action: "Watch", sparkline: [378, 380, 379, 381, 382, 383.1] },
+  { symbol: "RELIANCE", name: "Reliance Industries", price: 1167.70, change: 0.65, score: 0.0, win_prob: null, ev: null, rvol: 1.0, obi: 0.0, atr: 16.50, action: "Watch", sparkline: [1160, 1162, 1165, 1164, 1166, 1167.7] },
+  { symbol: "TMPV", name: "Tata Motors (TMPV)", price: 279.40, change: 0.85, score: 0.0, win_prob: null, ev: null, rvol: 1.0, obi: 0.0, atr: 4.20, action: "Watch", sparkline: [275, 276.5, 278, 277.2, 278.9, 279.4] },
+  { symbol: "BHARTIARTL", name: "Bharti Airtel", price: 1741.10, change: 0.85, score: 0.0, win_prob: null, ev: null, rvol: 1.0, obi: 0.0, atr: 21.00, action: "Watch", sparkline: [1725, 1730, 1728, 1736, 1734, 1741.1] },
+  { symbol: "SBIN", name: "State Bank of India", price: 812.50, change: 1.10, score: 0.0, win_prob: null, ev: null, rvol: 1.0, obi: 0.0, atr: 11.50, action: "Watch", sparkline: [802, 808, 805, 810, 809, 812.5] },
+  { symbol: "TATASTEEL", name: "Tata Steel", price: 165.20, change: 0.90, score: 0.0, win_prob: null, ev: null, rvol: 1.0, obi: 0.0, atr: 2.80, action: "Watch", sparkline: [163, 164.5, 163.8, 165, 165.2] },
+  { symbol: "ICICIBANK", name: "ICICI Bank", price: 1310.60, change: 0.60, score: 0.0, win_prob: null, ev: null, rvol: 1.0, obi: 0.0, atr: 15.60, action: "Watch", sparkline: [1300, 1305, 1302, 1308, 1310.6] },
+  { symbol: "INFY", name: "Infosys", price: 1035.00, change: 0.45, score: 0.0, win_prob: null, ev: null, rvol: 1.0, obi: 0.0, atr: 14.40, action: "Watch", sparkline: [1028, 1030, 1032, 1034, 1035] },
+  { symbol: "TCS", name: "Tata Consultancy Services", price: 2075.00, change: 0.35, score: 0.0, win_prob: null, ev: null, rvol: 1.0, obi: 0.0, atr: 28.50, action: "Watch", sparkline: [2060, 2068, 2072, 2075] },
+  { symbol: "HDFCBANK", name: "HDFC Bank", price: 721.20, change: -0.40, score: 0.0, win_prob: null, ev: null, rvol: 1.0, obi: 0.0, atr: 9.20, action: "Watch", sparkline: [725, 723, 722, 721.2] },
 ];
 
 // Application State Store
@@ -135,17 +135,26 @@ function updateDepthMatrix(stock) {
   let totalBidQty = 0;
   let totalAskQty = 0;
 
-  for (let i = 1; i <= 5; i++) {
-    const bidPrice = mid - (i * tickSize);
-    const askPrice = mid + (i * tickSize);
-    const bidQty = Math.round((1200 - (i * 150) + (Math.random() * 200)) * (1 + skew));
-    const askQty = Math.round((1200 - (i * 150) + (Math.random() * 200)) * (1 - skew));
-
-    bids.push({ price: bidPrice, qty: bidQty });
-    asks.push({ price: askPrice, qty: askQty });
-
-    totalBidQty += bidQty;
-    totalAskQty += askQty;
+  if (stock.depth && stock.depth.bids && stock.depth.bids.length >= 5) {
+    stock.depth.bids.slice(0, 5).forEach(b => {
+      bids.push({ price: b.price, qty: b.quantity });
+      totalBidQty += b.quantity;
+    });
+    stock.depth.asks.slice(0, 5).forEach(a => {
+      asks.push({ price: a.price, qty: a.quantity });
+      totalAskQty += a.quantity;
+    });
+  } else {
+    for (let i = 1; i <= 5; i++) {
+      const bidPrice = mid - (i * tickSize);
+      const askPrice = mid + (i * tickSize);
+      const bidQty = Math.round((1200 - (i * 150)) * (1 + skew));
+      const askQty = Math.round((1200 - (i * 150)) * (1 - skew));
+      bids.push({ price: bidPrice, qty: Math.max(10, bidQty) });
+      asks.push({ price: askPrice, qty: Math.max(10, askQty) });
+      totalBidQty += bidQty;
+      totalAskQty += askQty;
+    }
   }
 
   const b1 = bids[0];
@@ -242,8 +251,8 @@ function renderScannerTable() {
           <span class="price-val">₹${s.price.toFixed(2)}</span>
           <span class="price-change ${changeClass}">${changeText}</span>
         </td>
-        <td class="col-metric text-right font-mono">${s.win_prob.toFixed(1)}%</td>
-        <td class="col-metric text-right font-mono text-emerald">+${s.ev.toFixed(2)}%</td>
+        <td class="col-metric text-right font-mono">${s.win_prob ? s.win_prob.toFixed(1) + "%" : '<span class="badge-neutral" title="Uncalibrated - requires 300+ out-of-sample trades">UNAVAILABLE</span>'}</td>
+        <td class="col-metric text-right font-mono ${s.ev !== null && s.ev !== undefined ? (s.ev >= 0 ? "text-emerald" : "text-coral") : "text-muted"}">${s.ev !== null && s.ev !== undefined ? (s.ev >= 0 ? "+" : "") + s.ev.toFixed(2) + "%" : "--"}</td>
         <td class="col-metric text-right font-mono">${s.rvol.toFixed(1)}x</td>
         <td class="col-metric text-right font-mono ${s.obi >= 0 ? "text-emerald" : "text-coral"}">${obiPrefix}${s.obi.toFixed(2)}</td>
         <td class="col-action text-center">
@@ -308,40 +317,25 @@ function addAgentLog(entry) {
 function startSimulation() {
   const sampleDecisions = [
     {
-      symbol: "BEL",
-      tag: "Approved",
-      reason: "Breakout confirmed on 15m bar with heavy bid book skew (OBI +0.45). Net EV +0.24% exceeds hurdle.",
+      symbol: "SYSTEM",
+      tag: "Audit",
+      reason: "Market data streaming active. Uncalibrated ML probabilities set to UNAVAILABLE until 300+ trades recorded.",
     },
     {
-      symbol: "TATAMOTORS",
-      tag: "Approved",
-      reason: "Volume expansion 2.8x with microprice > midprice. Affordable for ₹1k account. Routed 1 share @ ₹925.30.",
+      symbol: "RISK",
+      tag: "Enforced",
+      reason: "Deterministic limits armed: Daily loss 2%, Weekly loss 5%, Max drawdown 10%, Sector cap 40%.",
     },
     {
-      symbol: "RELIANCE",
-      tag: "Rejected",
-      reason: "Signal approved by ML model, but skipped for ₹1k tiny account: share price ₹2,950 exceeds maximum position cap.",
-    },
-    {
-      symbol: "INFY",
-      tag: "Watching",
-      reason: "Net EV +0.11% is below the required 0.15% threshold after statutory charges. Waiting for breakout confirmation.",
-    },
-    {
-      symbol: "TATASTEEL",
-      tag: "Approved",
-      reason: "Low-priced liquidity survivor. Clean volume surge 1.8x. Routed 6 shares for tiny account.",
-    },
-    {
-      symbol: "HDFCBANK",
-      tag: "Risk",
-      reason: "Negative orderbook skew and flat trend. Blocked by activity filter.",
+      symbol: "GROWW",
+      tag: "Feed",
+      reason: "Read-only NSE live market quotes active. Real broker execution calls strictly disabled.",
     },
   ];
 
-  // Seed initial decisions
+  // Seed initial system audit logs
   sampleDecisions.forEach((d, idx) => {
-    const now = new Date(Date.now() - (idx * 4000));
+    const now = new Date(Date.now() - (idx * 2000));
     const timeStr = now.toTimeString().split(" ")[0];
     state.logs.push({ ...d, time: timeStr });
   });

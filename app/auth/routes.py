@@ -1,9 +1,9 @@
 """Authentication API routes."""
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, HTTPException, Response, status
 from pydantic import BaseModel
 
-from app.auth.security import create_session_token
+from app.auth.security import create_session_token, verify_session_token
 from app.config import get_settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -49,6 +49,14 @@ async def logout(response: Response) -> dict[str, str]:
 
 
 @router.get("/status", response_model=AuthStatusResponse)
-async def auth_status(response: Response, current_user: str | None = None) -> AuthStatusResponse:
-    """Check current authentication status."""
-    return AuthStatusResponse(authenticated=True, username=settings.ADMIN_USERNAME)
+async def auth_status(
+    session_token: str | None = Cookie(None, alias="paperdesk_session"),
+) -> AuthStatusResponse:
+    """Check current authentication status by verifying session cookie."""
+    if not session_token:
+        return AuthStatusResponse(authenticated=False, username=None)
+    try:
+        username = verify_session_token(session_token)
+        return AuthStatusResponse(authenticated=True, username=username)
+    except Exception:
+        return AuthStatusResponse(authenticated=False, username=None)

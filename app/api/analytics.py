@@ -1,12 +1,13 @@
-"""Edge Health, Strategy Health, and Quantitative Sample Quality Analytics."""
-
 import math
+import zoneinfo
+from datetime import UTC
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
 from app.portfolio.ledger import global_trade_ledger
 
+IST = zoneinfo.ZoneInfo("Asia/Kolkata")
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
 VALID_ACCOUNTS = {"tiny", "shadow", "real5k"}
@@ -52,6 +53,8 @@ def compute_edge_health(account_id: str, environment: str = "PAPER_LIVE") -> dic
             "avg_losing_trade": 0.0,
             "net_expectancy": 0.0,
             "profit_factor": 0.0,
+            "gross_profit_factor": 0.0,
+            "net_profit_factor": 0.0,
             "max_drawdown_pct": 0.0,
             "average_holding_seconds": 0.0,
             "sample_size": 0,
@@ -89,10 +92,11 @@ def compute_edge_health(account_id: str, environment: str = "PAPER_LIVE") -> dic
 
     net_expectancy = net_pnl / total_closed_trades
 
-    if gross_losses == 0:
-        profit_factor = round(gross_wins, 2) if gross_wins > 0 else 0.0
-    else:
-        profit_factor = round(gross_wins / gross_losses, 2)
+    gross_profit_factor = round(gross_wins / gross_losses, 2) if gross_losses > 0 else (round(gross_wins, 2) if gross_wins > 0 else 0.0)
+    net_wins = sum(t.net_pnl for t in winning_trades)
+    net_losses = abs(sum(t.net_pnl for t in losing_trades))
+    net_profit_factor = round(net_wins / net_losses, 2) if net_losses > 0 else (round(net_wins, 2) if net_wins > 0 else 0.0)
+    profit_factor = net_profit_factor
 
     cost_drag_pct = round((total_charges / gross_wins * 100.0), 2) if gross_wins > 0 else 0.0
 
@@ -158,6 +162,8 @@ def compute_edge_health(account_id: str, environment: str = "PAPER_LIVE") -> dic
         "avg_losing_trade": round(avg_loss, 2),
         "net_expectancy": round(net_expectancy, 2),
         "profit_factor": profit_factor,
+        "gross_profit_factor": gross_profit_factor,
+        "net_profit_factor": net_profit_factor,
         "max_drawdown_pct": round(max_dd_pct, 2),
         "average_holding_seconds": round(avg_holding, 1),
         "sample_size": total_closed_trades,
@@ -277,11 +283,15 @@ async def get_performance_breakdowns(
         by_symbol[sym]["trades"] += 1
         by_symbol[sym]["net_pnl"] = round(by_symbol[sym]["net_pnl"] + t.net_pnl, 2)
 
-    # 3. By time of day (hour IST)
+    # 3. By time of day (hour IST guaranteed)
     by_tod: dict[str, dict[str, Any]] = {}
     for t in trades:
-        hour = t.entry_timestamp.hour
-        hour_label = f"{hour:02d}:00"
+        ts = t.entry_timestamp
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=UTC)
+        ts_ist = ts.astimezone(IST)
+        hour = ts_ist.hour
+        hour_label = f"{hour:02d}:00 IST"
         if hour_label not in by_tod:
             by_tod[hour_label] = {"trades": 0, "net_pnl": 0.0}
         by_tod[hour_label]["trades"] += 1

@@ -124,7 +124,7 @@ class PreMarketScanner:
         tradable_survivors: list[PreMarketStockData] = []
         affordable_survivors: list[PreMarketStockData] = []
 
-        total_scanned = 2150  # Total listed NSE equity universe baseline
+        total_scanned = len(self.catalog)
 
         for stock in self.catalog:
             # Stage 1: Tradability & Risk Quarantine

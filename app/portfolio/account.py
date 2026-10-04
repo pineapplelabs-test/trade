@@ -134,5 +134,5 @@ class PortfolioAccount:
 portfolio_accounts: dict[str, PortfolioAccount] = {
     "tiny": PortfolioAccount("tiny", starting_capital=1000.0, max_positions=2),
     "shadow": PortfolioAccount("shadow", starting_capital=100000.0, max_positions=5),
-    "real5k": PortfolioAccount("real5k", starting_capital=5000.0, max_positions=3),
+    "real5k": PortfolioAccount("real5k", starting_capital=5000.0, max_positions=2),
 }
