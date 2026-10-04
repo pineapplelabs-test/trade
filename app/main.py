@@ -76,10 +76,11 @@ app = FastAPI(
 # Strict CORS: Same origin by default
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Same-origin or local dev
+    # Do not combine wildcard origins with credentials. Configure exact origins.
+    allow_origins=[origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # Register API Routers
