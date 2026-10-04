@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from fastapi import HTTPException
 
 from app.api.premarket import get_premarket_report
 from app.universe.premarket import (
@@ -153,7 +154,7 @@ def test_premarket_scanner_affordability_isolation() -> None:
 def test_premarket_report_generation() -> None:
     report = global_premarket_scanner.generate_report(account_id="real5k")
 
-    assert report.total_universe_scanned >= 2000
+    assert report.total_universe_scanned == len(global_premarket_scanner.catalog)
     assert report.passed_tradability > 0
     assert report.passed_affordability > 0
     assert len(report.focus_candidates) <= 5
@@ -169,14 +170,8 @@ def test_premarket_report_generation() -> None:
 
 
 @pytest.mark.asyncio
-async def test_premarket_api_endpoint() -> None:
-    res = await get_premarket_report(account="real5k")
-    assert res["status"] == "ok"
-    assert res["account_id"] == "real5k"
-    assert "focus_candidates" in res
-    assert len(res["focus_candidates"]) > 0
-    top = res["focus_candidates"][0]
-    assert "symbol" in top
-    assert "planned_entry" in top
-    assert "planned_stop" in top
-    assert "planned_target" in top
+async def test_premarket_api_fails_closed_without_real_data() -> None:
+    with pytest.raises(HTTPException) as exc:
+        await get_premarket_report(account="real5k")
+    assert exc.value.status_code == 503
+    assert "PREMARKET_UNAVAILABLE" in str(exc.value.detail)
