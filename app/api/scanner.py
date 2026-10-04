@@ -1,83 +1,76 @@
-"""Scanner API endpoint with multi-stage universe funnel & EV decision ranking."""
+"""Scanner API endpoint with multi-stage universe funnel.
 
+The scanner deliberately does not manufacture a win probability. Until an
+independent calibration dataset exists, EV cannot be used as a live entry gate.
+"""
 from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Query
 
-from app.config import get_settings
 from app.feed.calendar import get_market_session_phase
 from app.feed.instruments import DEFAULT_INSTRUMENTS, InstrumentMaster
 from app.feed.provider import get_market_data_provider
-from app.feed.recorder import global_market_recorder
 from app.feed.validator import FreshnessStatus, MarketDataValidator
 from app.indicators.orderbook import calculate_microprice, calculate_obi
 from app.indicators.technical import calculate_rvol, calculate_vwap_deviation
-from app.strategy.ev import EVParameters, calculate_expected_value
 from app.universe.funnel import FunnelConfig, UniverseFunnel
 
 router = APIRouter(prefix="/api/scanner", tags=["scanner"])
-settings = get_settings()
 master = InstrumentMaster()
 validator = MarketDataValidator()
 
-ACCOUNT_CAPITALS = {
-    "tiny": 1000.0,
-    "real5k": 5000.0,
-    "shadow": 100000.0,
-}
-
-ACCOUNT_EV_HURDLES = {
-    "tiny": 0.15,
-    "real5k": 0.12,
-    "shadow": 0.10,
-}
+ACCOUNT_CAPITALS = {"tiny": 1000.0, "real5k": 5000.0, "shadow": 100000.0}
+ACCOUNT_EV_HURDLES = {"tiny": 0.15, "real5k": 0.12, "shadow": 0.10}
 
 
 @router.get("")
 async def get_scanner_candidates(account: str = Query("tiny")) -> dict[str, Any]:
-    """Scan and rank liquid NSE equities using multi-stage funnel and EV decision gate."""
-    capital = ACCOUNT_CAPITALS.get(account, 1000.0)
-    ev_hurdle = ACCOUNT_EV_HURDLES.get(account, 0.15)
+    """Scan tradable NSE equities without inventing a calibrated probability."""
+    if account not in ACCOUNT_CAPITALS:
+        account = "tiny"
+
+    capital = ACCOUNT_CAPITALS[account]
+    ev_hurdle = ACCOUNT_EV_HURDLES[account]
     decision_timestamp = datetime.now(UTC)
-
-    funnel = UniverseFunnel(FunnelConfig(max_position_pct=0.50 if account == "tiny" else 0.20))
+    funnel = UniverseFunnel(
+        FunnelConfig(max_position_pct=0.50 if account == "tiny" else 0.20)
+    )
     provider = get_market_data_provider()
-
-    results = []
-    funnel_stats = {"monitored": len(DEFAULT_INSTRUMENTS), "liquid": 0, "approved": 0, "rejected": 0}
-
-    # Session Phase Check
+    results: list[dict[str, Any]] = []
+    funnel_stats = {"monitored": 0, "liquid": 0, "approved": 0, "rejected": 0}
     session_phase = get_market_session_phase(decision_timestamp)
 
     for inst in DEFAULT_INSTRUMENTS:
+        # Cash-equity scanner: never treat an index as an equity candidate.
+        if getattr(inst, "exchange", "NSE") != "NSE" or getattr(inst, "series", "EQ") != "EQ":
+            continue
+        funnel_stats["monitored"] += 1
+
         tick = await provider.get_latest_tick(inst.symbol)
         if not tick:
             continue
 
-        # 1. Freshness & Data Quality Validation
-        # Enforces: market_data_timestamp <= decision_timestamp, age limits, and 5-level completeness
-        freshness_status, freshness_reason = validator.validate_tick(tick, decision_timestamp=decision_timestamp)
+        freshness_status, freshness_reason = validator.validate_tick(
+            tick, decision_timestamp=decision_timestamp
+        )
         if freshness_status != FreshnessStatus.VALID:
             funnel_stats["rejected"] += 1
             results.append({
                 "symbol": inst.symbol,
                 "name": inst.name,
                 "price": tick.last_price,
-                "change": round(((tick.last_price - tick.close) / tick.close * 100), 2) if tick.close > 0 else 0.0,
                 "status": "REJECT",
                 "action": "Blocked",
                 "rejection_stage": f"DATA_INTEGRITY_{freshness_status.value}",
                 "rejection_reason": freshness_reason,
                 "data_quality": freshness_status.value,
-                "obi": 0.0,
-                "rvol": 1.0,
-                "ev_pct": 0.0,
-                "win_chance": 0,
+                "probability_status": "UNAVAILABLE",
+                "win_chance": None,
+                "ev_pct": None,
             })
             continue
 
-        # 2. Universe Funnel Evaluation (liquidity, spread, circuit, affordability)
         eval_res = funnel.evaluate(inst, tick, account_capital=capital)
         if not eval_res.passed:
             funnel_stats["rejected"] += 1
@@ -85,67 +78,45 @@ async def get_scanner_candidates(account: str = Query("tiny")) -> dict[str, Any]
                 "symbol": inst.symbol,
                 "name": inst.name,
                 "price": tick.last_price,
-                "change": round(((tick.last_price - tick.close) / tick.close * 100), 2) if tick.close > 0 else 0.0,
                 "status": "REJECT",
                 "action": "Skip",
                 "rejection_stage": eval_res.stage,
                 "rejection_reason": eval_res.reason,
                 "data_quality": "VALID",
-                "obi": 0.0,
-                "rvol": 1.0,
-                "ev_pct": 0.0,
-                "win_chance": 0,
+                "probability_status": "UNAVAILABLE",
+                "win_chance": None,
+                "ev_pct": None,
             })
             continue
 
         funnel_stats["liquid"] += 1
-
-        # 3. Quant Indicators
         obi = calculate_obi(tick.depth)
         mp = calculate_microprice(tick.depth)
         rvol = calculate_rvol(tick.volume, baseline_volume=200000)
         vwap_dev = calculate_vwap_deviation(tick.last_price, tick.average_traded_price)
 
-        # Baseline win probability estimate
-        base_p = 0.50 + (0.10 * obi) + (0.05 * min(2.0, rvol - 1.0))
-        win_prob = max(0.35, min(0.75, base_p))
-
-        # Expected Value calculation
-        expected_gain_pct = 1.20  # ~1.2% target
-        expected_loss_pct = 0.70  # ~0.7% stop
-        estimated_charges_pct = 0.25  # ~0.25% all-in charges & slippage
-
-        ev_decision = calculate_expected_value(
-            EVParameters(
-                win_probability=win_prob,
-                expected_reward=expected_gain_pct,
-                expected_loss=expected_loss_pct,
-                total_costs=estimated_charges_pct,
-                min_hurdle=ev_hurdle,
-            )
-        )
-
-        action = "Enter" if ev_decision.status.value == "ACCEPT" else "Watch"
-        if action == "Enter":
-            funnel_stats["approved"] += 1
-            # Record market snapshot immutably on approval
-            global_market_recorder.record_snapshot(tick)
-
+        # OBI/RVOL are features, not a probability model.
+        # Until p is learned and independently calibrated, no entry is allowed.
         results.append({
             "symbol": inst.symbol,
             "name": inst.name,
             "price": tick.last_price,
-            "change": round(((tick.last_price - tick.close) / tick.close * 100), 2) if tick.close > 0 else 0.0,
+            "change": round(((tick.last_price - tick.close) / tick.close * 100), 2)
+            if tick.close > 0 else 0.0,
             "score": round(obi * 2.0 + (rvol - 1.0), 2),
-            "win_chance": int(win_prob * 100),
-            "ev_pct": round(ev_decision.net_ev, 2),
+            "win_chance": None,
+            "probability_status": "UNAVAILABLE",
+            "ev_pct": None,
             "rvol": round(rvol, 1),
             "obi": round(obi, 2),
             "microprice": round(mp, 2),
             "vwap_deviation": round(vwap_dev, 2),
-            "status": ev_decision.status.value,
-            "action": action,
-            "reason": ev_decision.reason,
+            "status": "UNCALIBRATED",
+            "action": "Watch",
+            "reason": (
+                "Candidate observed, but entry is blocked because no independently "
+                "calibrated win-probability model is available."
+            ),
             "data_quality": "VALID",
             "market_status": session_phase,
             "depth": {
@@ -154,13 +125,14 @@ async def get_scanner_candidates(account: str = Query("tiny")) -> dict[str, Any]
             },
         })
 
-    # Sort accepted opportunities first, highest Net EV first
-    results.sort(key=lambda x: (x.get("status") == "ACCEPT", x.get("ev_pct", 0.0)), reverse=True)
-
+    results.sort(key=lambda x: x.get("score", 0.0), reverse=True)
     return {
         "account": account,
         "capital": capital,
         "ev_hurdle": ev_hurdle,
+        "probability_model": "NONE",
+        "probability_status": "UNCALIBRATED",
+        "entry_decisions_enabled": False,
         "feed_source": provider.get_source_name(),
         "is_connected": provider.is_connected(),
         "session_phase": session_phase,
