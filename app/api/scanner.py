@@ -8,6 +8,7 @@ from typing import Any
 
 from fastapi import APIRouter, Query
 
+from app.config import get_accounts_config
 from app.feed.calendar import get_market_session_phase
 from app.feed.instruments import DEFAULT_INSTRUMENTS, InstrumentMaster
 from app.feed.provider import get_market_data_provider
