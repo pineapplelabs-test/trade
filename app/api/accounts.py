@@ -20,7 +20,7 @@ SYSTEM_HALTED = False
 
 
 class FeedModeRequest(BaseModel):
-    feed: Literal["kite", "replay", "sim"]
+    feed: Literal["groww", "replay", "sim"]
 
 
 @router.get("/accounts")
@@ -40,16 +40,22 @@ async def list_accounts(db: Annotated[AsyncSession, Depends(get_db)]) -> list[di
             )
         )
         open_positions = pos_res.scalars().all()
+        from app.portfolio.account import portfolio_accounts
+        live_acct = portfolio_accounts.get(acct.id)
+        current_equity = live_acct.equity if live_acct else acct.starting_capital
+        current_cash = live_acct.cash if live_acct else acct.starting_capital
+        realized_pnl = live_acct.realized_pnl if live_acct else 0.0
+        pnl_pct = round((realized_pnl / acct.starting_capital) * 100.0, 2) if acct.starting_capital > 0 else 0.0
 
         out.append({
             "id": acct.id,
             "name": acct.name,
             "starting_capital": acct.starting_capital,
-            "equity": acct.starting_capital,  # In Milestone 1, matches initial capital
-            "cash": acct.starting_capital,
-            "day_pnl": 0.0,
-            "day_pnl_pct": 0.0,
-            "open_positions_count": len(open_positions),
+            "equity": current_equity,
+            "cash": current_cash,
+            "day_pnl": realized_pnl,
+            "day_pnl_pct": pnl_pct,
+            "open_positions_count": len(live_acct.positions) if live_acct else len(open_positions),
             "max_positions": cfg.get("max_open_positions", 2),
             "max_position_pct": cfg.get("max_position_pct", 50.0),
             "risk_per_trade_pct": cfg.get("risk_per_trade_pct", 1.0),
@@ -85,7 +91,7 @@ async def resume_system() -> dict:
 
 @router.post("/mode")
 async def set_feed_mode(req: FeedModeRequest) -> dict:
-    """Switch market feed mode between sim, replay, and kite."""
+    """Switch market feed mode between sim, replay, and groww."""
     settings.FEED_MODE = req.feed
     return {
         "status": "ok",

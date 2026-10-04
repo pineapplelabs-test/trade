@@ -16,7 +16,8 @@
   <aside class="notice-bar">
     <div class="notice-inner">
       <span class="notice-badge">PAPER TRADING</span>
-      <span class="notice-text">Simulation Mode &bull; Real-time NSE cash market data &bull; No actual broker orders or real capital deployed.</span>
+      <span class="notice-badge" id="env-badge" style="background: rgba(0, 208, 156, 0.16); color: #00D09C; margin-left: 8px;">ENV: PAPER_LIVE</span>
+      <span class="notice-text">Simulation Mode &bull; Real-time NSE cash market data &bull; No actual broker orders or real capital deployed. Demo data strictly isolated.</span>
     </div>
   </aside>
 
@@ -87,9 +88,9 @@
         </div>
 
         <!-- Feed Status Pill -->
-        <div class="feed-badge sim" id="feed-status-pill">
+        <div class="feed-badge live" id="feed-status-pill">
           <span class="status-circle"></span>
-          <span id="feed-status-text">Simulated</span>
+          <span id="feed-status-text">Groww Feed (Live)</span>
         </div>
 
         <!-- Emergency Kill Switch (Groww styled action button) -->
@@ -108,19 +109,44 @@
     </div>
   </header>
 
-  <!-- Subheader with Market Clock & Breadcrumbs -->
-  <div class="subbar">
-    <div class="subbar-container">
-      <div class="subbar-left">
-        <span class="market-status-dot"></span>
-        <span class="market-status-text" id="market-session-status">NSE Session: Closed &bull; 09:15 - 15:30 IST</span>
+  <!-- Groww Style Live Indices Ticker Subbar -->
+  <div class="groww-indices-bar">
+    <div class="indices-container">
+      <div class="index-item">
+        <span class="index-name">NIFTY 50</span>
+        <span class="index-price font-mono">24,421.95</span>
+        <span class="index-change font-mono positive">+84.20 (+0.35%)</span>
       </div>
-      <div class="subbar-right">
-        <span class="clock-label">Market Clock:</span>
-        <span class="clock-val font-mono" id="header-clock">--:--:-- IST</span>
-        <span class="separator">|</span>
-        <span class="pnl-label">Day P&amp;L:</span>
-        <span class="pnl-val font-mono neutral" id="header-day-pnl">₹0.00 (0.00%)</span>
+      <div class="index-sep"></div>
+      <div class="index-item">
+        <span class="index-name">SENSEX</span>
+        <span class="index-price font-mono">80,120.30</span>
+        <span class="index-change font-mono positive">+265.10 (+0.33%)</span>
+      </div>
+      <div class="index-sep"></div>
+      <div class="index-item">
+        <span class="index-name">BANKNIFTY</span>
+        <span class="index-price font-mono">52,100.40</span>
+        <span class="index-change font-mono negative">-42.50 (-0.08%)</span>
+      </div>
+      <div class="index-sep"></div>
+      <div class="index-item">
+        <span class="index-name">INDIA VIX</span>
+        <span class="index-price font-mono">13.20</span>
+        <span class="index-change font-mono negative">-0.35 (-2.58%)</span>
+      </div>
+      <div class="indices-right">
+        <!-- Compact Market Data Quality Indicator -->
+        <div class="data-quality-pill font-mono" id="data-quality-pill" title="Live Market Data Health & Timestamp Integrity">
+          <span class="quality-dot live" id="quality-dot"></span>
+          <span class="quality-source" id="quality-source">LIVE — Groww</span>
+          <span class="quality-conn" id="quality-conn">CONNECTED</span>
+          <span class="quality-latency" id="quality-quote-age">Quote: 84ms</span>
+          <span class="quality-latency" id="quality-depth-age">Depth: 91ms</span>
+        </div>
+        <span class="market-clock-pill font-mono" id="header-clock">11:34:02 IST</span>
+        <span class="session-badge" id="market-session-status">NSE Session: Open</span>
+        <span class="pnl-pill font-mono" id="header-day-pnl">Day P&amp;L: ₹0.00 (0.00%)</span>
       </div>
     </div>
   </div>
@@ -128,138 +154,306 @@
   <!-- Main Content Layout -->
   <main class="page-container">
 
-    <!-- TAB 1: SCANNER (Groww All Stocks Page Layout) -->
+    <!-- TAB 1: GROWW EXPLORE SCANNER & AGENT INTELLIGENCE -->
     <section class="tab-pane active" id="pane-scanner">
-      <div class="view-header">
-        <h1 class="view-title">All Stocks</h1>
-        <p class="view-sub">Real-time scan of liquid NSE cash equities filtered by volume, spread, and momentum.</p>
+      
+      <!-- 08:30 – 09:10 AM PRE-MARKET INTELLIGENCE & 2,000+ STOCK FUNNEL -->
+      <div class="premarket-briefing-card" id="premarket-briefing">
+        <div class="premarket-header">
+          <div class="premarket-title-area">
+            <span class="premarket-live-pill"><span class="pulse-dot"></span> 09:08 AM PRE-OPEN AUCTION INTELLIGENCE</span>
+            <h2 class="premarket-title">Pre-Market Focus Watchlist (Top 5 Setups)</h2>
+            <p class="premarket-desc">Narrowed from 2,000+ listed NSE equities. Filtered for institutional liquidity, ASM/GSM quarantine, account affordability, and pre-open auction discovered gap momentum.</p>
+          </div>
+          <div class="premarket-macro-metrics">
+            <div class="macro-metric-pill">
+              <span class="macro-label">NIFTY BIAS</span>
+              <strong class="macro-val positive" id="pm-bias-val">BULLISH (+0.45%)</strong>
+            </div>
+            <div class="macro-metric-pill">
+              <span class="macro-label">INDIA VIX</span>
+              <strong class="macro-val" id="pm-vix-val">13.20</strong>
+            </div>
+            <div class="macro-metric-pill">
+              <span class="macro-label">RECOMMENDED</span>
+              <strong class="macro-val text-brand" id="pm-strategy-val">ORB Breakout</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="premarket-funnel-summary">
+          <div class="funnel-stat">
+            <span class="funnel-stat-num" id="pm-scanned-count">2,150</span>
+            <span class="funnel-stat-label">Listed Equities</span>
+          </div>
+          <div class="funnel-arrow">➔</div>
+          <div class="funnel-stat">
+            <span class="funnel-stat-num" id="pm-tradable-count">482</span>
+            <span class="funnel-stat-label">Passed Tradability</span>
+          </div>
+          <div class="funnel-arrow">➔</div>
+          <div class="funnel-stat">
+            <span class="funnel-stat-num" id="pm-affordable-count">142</span>
+            <span class="funnel-stat-label">Affordable (<span id="pm-account-label">real5k</span>)</span>
+          </div>
+          <div class="funnel-arrow">➔</div>
+          <div class="funnel-stat highlight">
+            <span class="funnel-stat-num" id="pm-focus-count">5</span>
+            <span class="funnel-stat-label">Actionable Focus</span>
+          </div>
+        </div>
+
+        <div class="premarket-table-wrapper">
+          <table class="premarket-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Stock</th>
+                <th>Discovered</th>
+                <th>Auction Gap</th>
+                <th>14D ATR</th>
+                <th>Trigger Entry</th>
+                <th>Hard Stop</th>
+                <th>Target (1:2)</th>
+                <th>Max Qty</th>
+                <th>EV Edge</th>
+                <th>Setup Rationale</th>
+              </tr>
+            </thead>
+            <tbody id="premarket-tbody">
+              <!-- Dynamically populated via loadPreMarketReport() -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="groww-grid-layout">
+      <!-- Top Section: Alpha Opportunities (Matches Groww Popular Bonds / Most Bought Cards) -->
+      <div class="explore-section">
+        <div class="explore-section-header">
+          <h2 class="section-title">Top Strategy Opportunities</h2>
+          <span class="section-subtitle">Real-time candidate stocks with verified statistical edge &amp; positive expected value</span>
+        </div>
+
+        <div class="groww-cards-grid" id="hero-cards-grid">
+          <!-- Card 1 -->
+          <div class="groww-stock-card active-card" data-symbol="BEL">
+            <div class="card-top">
+              <div class="card-logo-badge logo-emerald">BE</div>
+              <span class="card-strat-badge">ORB Breakout</span>
+            </div>
+            <div class="card-body">
+              <div class="card-symbol font-mono">BEL</div>
+              <div class="card-name">Bharat Electronics</div>
+              <div class="card-price-row">
+                <span class="card-price font-mono">₹383.10</span>
+                <span class="card-change font-mono positive">+1.45%</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="card-metric">Win Prob: <strong class="font-mono positive">61%</strong></span>
+              <span class="card-metric">Net EV: <strong class="font-mono positive">+0.24%</strong></span>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="groww-stock-card" data-symbol="RELIANCE">
+            <div class="card-top">
+              <div class="card-logo-badge logo-blue">RI</div>
+              <span class="card-strat-badge">Breakout</span>
+            </div>
+            <div class="card-body">
+              <div class="card-symbol font-mono">RELIANCE</div>
+              <div class="card-name">Reliance Industries</div>
+              <div class="card-price-row">
+                <span class="card-price font-mono">₹1,167.70</span>
+                <span class="card-change font-mono positive">+0.65%</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="card-metric">Win Prob: <strong class="font-mono positive">64%</strong></span>
+              <span class="card-metric">Net EV: <strong class="font-mono positive">+0.28%</strong></span>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="groww-stock-card" data-symbol="TMPV">
+            <div class="card-top">
+              <div class="card-logo-badge logo-orange">TM</div>
+              <span class="card-strat-badge">High RVOL</span>
+            </div>
+            <div class="card-body">
+              <div class="card-symbol font-mono">TMPV</div>
+              <div class="card-name">Tata Motors (TMPV)</div>
+              <div class="card-price-row">
+                <span class="card-price font-mono">₹279.40</span>
+                <span class="card-change font-mono positive">+0.85%</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="card-metric">Win Prob: <strong class="font-mono positive">58%</strong></span>
+              <span class="card-metric">Net EV: <strong class="font-mono positive">+0.19%</strong></span>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="groww-stock-card" data-symbol="BHARTIARTL">
+            <div class="card-top">
+              <div class="card-logo-badge logo-purple">BA</div>
+              <span class="card-strat-badge">Rel Strength</span>
+            </div>
+            <div class="card-body">
+              <div class="card-symbol font-mono">BHARTIARTL</div>
+              <div class="card-name">Bharti Airtel</div>
+              <div class="card-price-row">
+                <span class="card-price font-mono">₹1,741.10</span>
+                <span class="card-change font-mono positive">+0.85%</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="card-metric">Win Prob: <strong class="font-mono positive">59%</strong></span>
+              <span class="card-metric">Net EV: <strong class="font-mono positive">+0.22%</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="explore-see-more">
+          <a href="#scanner-table" class="link-see-more">See all candidate stocks &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Main Layout: 68% Left Stock Table / 32% Right Intelligence Sidebar -->
+      <div class="explore-main-grid">
         
-        <!-- Left Sidebar: Groww Style FILTERS -->
-        <aside class="sidebar-filters">
-          <div class="filter-card">
-            <div class="filter-card-header">
-              <span class="filter-heading">FILTERS</span>
-              <button class="btn-clear-all" id="btn-clear-filters">CLEAR ALL</button>
+        <!-- Left Column: Scanned Stocks Table -->
+        <div class="explore-left-col">
+          <div class="table-section-header">
+            <div>
+              <h3 class="subsection-title">All Scanned Stocks</h3>
+              <p class="subsection-caption">Continuous scan of 628 liquid NSE equities filtered by turnover, spread, and momentum.</p>
             </div>
 
-            <!-- Sectors Accordion -->
-            <div class="filter-group">
-              <div class="filter-group-title">
-                <span>Universe Funnel</span>
-              </div>
-              <div class="filter-options">
-                <label class="checkbox-row">
-                  <input type="checkbox" checked disabled>
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Turnover &gt; ₹5 Cr</span>
-                </label>
-                <label class="checkbox-row">
-                  <input type="checkbox" checked disabled>
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Price &gt; ₹20</span>
-                </label>
-                <label class="checkbox-row">
-                  <input type="checkbox" checked disabled>
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Spread &lt; 0.15%</span>
-                </label>
-                <label class="checkbox-row">
-                  <input type="checkbox" checked disabled>
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Exclude ASM / GSM</span>
-                </label>
-                <label class="checkbox-row">
-                  <input type="checkbox" checked disabled>
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Affordable for Account</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Index Categories -->
-            <div class="filter-group">
-              <div class="filter-group-title">
-                <span>Index</span>
-              </div>
-              <div class="filter-options">
-                <label class="checkbox-row">
-                  <input type="checkbox" checked>
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Nifty 50</span>
-                </label>
-                <label class="checkbox-row">
-                  <input type="checkbox" checked>
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Nifty Next 50</span>
-                </label>
-                <label class="checkbox-row">
-                  <input type="checkbox">
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Nifty Bank</span>
-                </label>
-                <label class="checkbox-row">
-                  <input type="checkbox">
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Nifty Midcap 100</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Active Strategy Filter -->
-            <div class="filter-group">
-              <div class="filter-group-title">
-                <span>Strategies Active</span>
-              </div>
-              <div class="filter-options">
-                <label class="checkbox-row">
-                  <input type="checkbox" checked>
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Opening Range Breakout (ORB)</span>
-                </label>
-                <label class="checkbox-row">
-                  <input type="checkbox" checked>
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">VWAP Mean Reversion</span>
-                </label>
-              </div>
-            </div>
-
-          </div>
-        </aside>
-
-        <!-- Right Main: Table matching Groww Filtered Stocks -->
-        <div class="main-stock-panel">
-          <div class="results-header">
-            <span class="results-count">Search results <strong id="stock-count-display">10 Stocks</strong></span>
-            <div class="applied-chips">
-              <span class="chip">Turnover &gt; ₹5Cr <button class="chip-remove" aria-label="Remove filter">&times;</button></span>
-              <span class="chip">Spread &lt; 0.15% <button class="chip-remove" aria-label="Remove filter">&times;</button></span>
-              <span class="chip">Affordable <button class="chip-remove" aria-label="Remove filter">&times;</button></span>
+            <!-- Groww Style Filter Pills -->
+            <div class="groww-filter-pills">
+              <button class="filter-pill active" data-filter="all">All</button>
+              <button class="filter-pill" data-filter="rvol">High RVOL (&gt;1.5x)</button>
+              <button class="filter-pill" data-filter="affordable">Affordable (&lt;₹500)</button>
+              <button class="filter-pill" data-filter="orb">ORB Signals</button>
             </div>
           </div>
 
-          <div class="groww-table-card">
-            <table class="groww-table" id="scanner-table">
+          <!-- Clean Groww Style Table Card -->
+          <div class="groww-table-wrapper">
+            <table class="groww-stock-table" id="scanner-table">
               <thead>
                 <tr>
-                  <th class="col-company">COMPANY <span class="sort-icon">&blacktriangledown;</span></th>
+                  <th class="col-company">COMPANY</th>
                   <th class="col-chart text-center">TREND</th>
-                  <th class="col-price text-right">MARKET PRICE <span class="sort-icon">&blacktriangledown;</span></th>
-                  <th class="col-score text-center">SCORE SPECTRUM</th>
+                  <th class="col-price text-right">MARKET PRICE</th>
                   <th class="col-metric text-right">WIN PROB</th>
                   <th class="col-metric text-right">NET EV</th>
                   <th class="col-metric text-right">RVOL</th>
+                  <th class="col-metric text-right">BOOK SKEW</th>
                   <th class="col-action text-center">ACTION</th>
                 </tr>
               </thead>
               <tbody id="scanner-tbody">
-                <!-- Dynamically populated or rendered with default liquid NSE universe -->
+                <!-- Dynamically populated -->
               </tbody>
             </table>
           </div>
+        </div>
+
+        <!-- Right Column: Products & Intelligence (Matches Groww Right Sidebar) -->
+        <div class="explore-right-col">
+          
+          <!-- Card 1: Agent Intelligence Live Feed -->
+          <div class="groww-sidebar-card">
+            <div class="sidebar-card-header">
+              <div class="sidebar-title-group">
+                <span class="groww-dot-live"></span>
+                <h4 class="sidebar-title">Agent Intelligence</h4>
+              </div>
+              <span class="sidebar-badge font-mono" id="log-count-badge">8 LOGS</span>
+            </div>
+
+            <div class="agent-decisions-feed" id="agent-log-container">
+              <!-- Streaming clean thoughts injected here -->
+            </div>
+          </div>
+
+          <!-- Card 2: 5-Level Depth & Microprice Inspector -->
+          <div class="groww-sidebar-card">
+            <div class="sidebar-card-header">
+              <div class="sidebar-title-group">
+                <h4 class="sidebar-title">Order Book Depth</h4>
+                <span class="sidebar-subtitle font-mono" id="depth-target-symbol">BEL // CASH</span>
+              </div>
+              <span class="microprice-pill font-mono">Microprice: <strong id="depth-microprice" class="positive">₹295.58</strong></span>
+            </div>
+
+            <div class="sidebar-depth-body">
+              <!-- Live OBI Bar -->
+              <div class="depth-obi-wrap">
+                <div class="depth-obi-labels font-mono">
+                  <span>Bids</span>
+                  <span id="depth-obi-val" class="positive">OBI: +0.45</span>
+                  <span>Asks</span>
+                </div>
+                <div class="depth-obi-track">
+                  <div class="depth-obi-center"></div>
+                  <div class="depth-obi-bar positive" id="depth-obi-bar" style="width: 45%; left: 50%;"></div>
+                </div>
+              </div>
+
+              <!-- 5-Level Ladder -->
+              <div class="depth-grid-compact">
+                <div class="ladder-col">
+                  <div class="ladder-header font-mono"><span>QTY</span><span>BID</span></div>
+                  <div class="ladder-list font-mono" id="depth-bids"></div>
+                </div>
+                <div class="ladder-col">
+                  <div class="ladder-header font-mono"><span>ASK</span><span>QTY</span></div>
+                  <div class="ladder-list font-mono" id="depth-asks"></div>
+                </div>
+              </div>
+
+              <div class="depth-totals-summary font-mono">
+                <span>Total Bids: <strong id="depth-total-bids">14,820</strong></span>
+                <span>Total Asks: <strong id="depth-total-asks">5,630</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Universe Funnel Status -->
+          <div class="groww-sidebar-card">
+            <div class="sidebar-card-header">
+              <h4 class="sidebar-title">Universe Funnel</h4>
+              <span class="sidebar-latency font-mono" id="funnel-latency">14.2 ms</span>
+            </div>
+            <div class="funnel-stats-list font-mono">
+              <div class="funnel-stat-row">
+                <span class="stat-name">NSE EQ Universe</span>
+                <span class="stat-num" id="funnel-total">1,842</span>
+              </div>
+              <div class="funnel-stat-row">
+                <span class="stat-name">Liquid (Turnover &gt; ₹5Cr)</span>
+                <span class="stat-num" id="funnel-liquid">628</span>
+              </div>
+              <div class="funnel-stat-row">
+                <span class="stat-name">Active In-Play (RVOL &gt; 1.5x)</span>
+                <span class="stat-num positive" id="funnel-active">42</span>
+              </div>
+              <div class="funnel-stat-row">
+                <span class="stat-name">Candidate Signals</span>
+                <span class="stat-num positive" id="funnel-scored">11</span>
+              </div>
+              <div class="funnel-stat-row">
+                <span class="stat-name">Approved Paper Trades</span>
+                <span class="stat-num positive" id="funnel-entered">2</span>
+              </div>
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -306,24 +500,98 @@
     <section class="tab-pane" id="pane-trades">
       <div class="view-header">
         <h1 class="view-title">Orders &amp; Execution Ledger</h1>
-        <p class="view-sub">Complete trade ledger with exact Indian statutory taxes (STT, NSE fees, GST, Stamp Duty) and loss attribution.</p>
+        <p class="view-sub">Complete trade ledger with exact Indian statutory taxes (STT, NSE fees, GST, Stamp Duty) and forensic loss attribution. Select any trade to audit decision, execution, and fee math.</p>
+      </div>
+
+      <!-- Edge Health Summary Panel -->
+      <div class="edge-health-card" id="edge-health-panel">
+        <div class="edge-health-header">
+          <div class="edge-title-wrap">
+            <h2 class="edge-heading">Strategy Edge Health &amp; Attribution</h2>
+            <span class="edge-account-tag" id="edge-account-tag">Account: tiny (₹1,000)</span>
+          </div>
+          <div class="edge-badge-wrap">
+            <span class="status-badge" id="edge-health-badge">INSUFFICIENT SAMPLE</span>
+            <span class="sample-tag font-mono" id="edge-sample-tag">Sample: 0 / 30 trades</span>
+          </div>
+        </div>
+
+        <p class="edge-explanation" id="edge-explanation-text">
+          Evaluating whether strategy maintains positive expected value after realistic execution drag, depth-walking fills, and statutory Indian charges.
+        </p>
+
+        <!-- Edge Metrics Grid -->
+        <div class="edge-metrics-grid">
+          <div class="edge-stat-box">
+            <span class="edge-stat-label">Net Realized P&amp;L</span>
+            <span class="edge-stat-value font-mono" id="edge-realized-pnl">₹0.00</span>
+            <span class="edge-stat-sub">After all charges</span>
+          </div>
+          <div class="edge-stat-box">
+            <span class="edge-stat-label">Gross Trading P&amp;L</span>
+            <span class="edge-stat-value font-mono" id="edge-gross-pnl">₹0.00</span>
+            <span class="edge-stat-sub">Fill exit minus entry</span>
+          </div>
+          <div class="edge-stat-box">
+            <span class="edge-stat-label">Statutory Charges</span>
+            <span class="edge-stat-value font-mono text-coral" id="edge-total-charges">₹0.00</span>
+            <span class="edge-stat-sub">STT, NSE, GST, Stamp</span>
+          </div>
+          <div class="edge-stat-box">
+            <span class="edge-stat-label">Slippage Impact</span>
+            <span class="edge-stat-value font-mono" id="edge-slippage-drag">₹0.00</span>
+            <span class="edge-stat-sub">Reflected in fills</span>
+          </div>
+          <div class="edge-stat-box">
+            <span class="edge-stat-label">Net Win Rate</span>
+            <span class="edge-stat-value font-mono" id="edge-win-rate">0.0%</span>
+            <span class="edge-stat-sub" id="edge-win-loss-count">0 W / 0 L</span>
+          </div>
+          <div class="edge-stat-box">
+            <span class="edge-stat-label">Net Expectancy</span>
+            <span class="edge-stat-value font-mono" id="edge-expectancy">₹0.00</span>
+            <span class="edge-stat-sub">Per completed trade</span>
+          </div>
+          <div class="edge-stat-box">
+            <span class="edge-stat-label">Profit Factor</span>
+            <span class="edge-stat-value font-mono" id="edge-profit-factor">0.00</span>
+            <span class="edge-stat-sub">Gross Win / Gross Loss</span>
+          </div>
+          <div class="edge-stat-box">
+            <span class="edge-stat-label">Max Drawdown</span>
+            <span class="edge-stat-value font-mono" id="edge-max-dd">0.0%</span>
+            <span class="edge-stat-sub">Peak-to-trough</span>
+          </div>
+        </div>
+
+        <!-- Honest Decomposition Bar -->
+        <div class="edge-decomposition-bar">
+          <div class="decomp-row font-mono">
+            <span>Gross Trading P&amp;L: <strong id="decomp-gross">₹0.00</strong></span>
+            <span>&minus;</span>
+            <span class="text-coral">Statutory Charges: <strong id="decomp-charges">₹0.00</strong></span>
+            <span>=</span>
+            <span class="positive">Net P&amp;L: <strong id="decomp-net">₹0.00</strong></span>
+            <span class="decomp-note">(Slippage attributed separately; not double-counted)</span>
+          </div>
+        </div>
       </div>
 
       <div class="groww-table-card">
-        <table class="groww-table" id="trades-table">
+        <table class="groww-table clickable-rows" id="trades-table">
           <thead>
             <tr>
+              <th>TRADE ID</th>
               <th>TIMESTAMP</th>
               <th>COMPANY</th>
-              <th>TYPE</th>
+              <th>SIDE</th>
               <th class="text-right">QTY</th>
               <th class="text-right">ENTRY (₹)</th>
               <th class="text-right">EXIT (₹)</th>
               <th class="text-right">GROSS P&amp;L</th>
-              <th class="text-right">STATUTORY COSTS</th>
+              <th class="text-right">FEES &amp; TAXES</th>
               <th class="text-right">NET P&amp;L</th>
-              <th class="text-center">R:R</th>
-              <th class="text-center">EXIT TYPE</th>
+              <th class="text-center">STATUS</th>
               <th class="text-center">ATTRIBUTION</th>
             </tr>
           </thead>
@@ -477,19 +745,19 @@
     <section class="tab-pane" id="pane-settings">
       <div class="view-header">
         <h1 class="view-title">Settings &amp; Data Integration</h1>
-        <p class="view-sub">Zerodha Kite session tokens, feed sources, and execution simulation modes.</p>
+        <p class="view-sub">Groww NSE market data feed, feed sources, and execution simulation modes.</p>
       </div>
 
       <div class="settings-card-grid">
         <div class="setting-box">
-          <h3 class="setting-title">Zerodha Kite Connect Session</h3>
-          <p class="setting-desc">Kite tokens expire every morning at 06:00 AM IST and require user login.</p>
+          <h3 class="setting-title">Groww Market Data Integration</h3>
+          <p class="setting-desc">Direct read-only API connection to Groww NSE live quotes and 5-level market depth.</p>
           <div class="setting-row">
             <div>
               <span class="setting-label">Authentication State</span>
-              <div class="setting-val text-coral" id="kite-auth-status">Token Not Initialized</div>
+              <div class="setting-val text-brand" id="feed-auth-status">Groww Read-Only Connected (NSE)</div>
             </div>
-            <a href="/login/kite" class="btn-groww-primary" id="kite-login-link">Connect Kite</a>
+            <span class="badge-status status-buy" id="feed-auth-badge">Active &amp; Read-Only</span>
           </div>
         </div>
 
@@ -499,7 +767,7 @@
           <div class="groww-pill-group" id="feed-mode-selector">
             <button class="pill-btn active" data-mode="sim">Simulated</button>
             <button class="pill-btn" data-mode="replay">Replay</button>
-            <button class="pill-btn" data-mode="kite">Live Kite</button>
+            <button class="pill-btn" data-mode="groww">Live Groww</button>
           </div>
         </div>
 
@@ -512,6 +780,23 @@
               <input type="checkbox" id="pessimistic-fills-toggle" checked>
               <span class="groww-slider"></span>
             </label>
+          </div>
+        <div class="setting-box" style="grid-column: 1 / -1;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div>
+              <h3 class="setting-title">09:15 AM Pre-Market Diagnostic &amp; Readiness Check</h3>
+              <p class="setting-desc">Validates all 20 institutional sub-systems before NSE market open (Database, Feed, 5-Level Depth, EV, Fees, Sizing, Recovery, Safety).</p>
+            </div>
+            <button class="btn-groww-primary" id="btn-run-readiness" style="padding: 8px 18px; font-weight: 600; cursor: pointer;">Run 09:15 AM Diagnostics</button>
+          </div>
+          
+          <div id="readiness-summary-banner" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(0, 208, 156, 0.08); border: 1px solid rgba(0, 208, 156, 0.2); border-radius: 8px; margin-bottom: 16px;">
+            <span style="font-weight: 700; font-size: 14px; color: #00B386;" id="readiness-status-badge">PAPER DESK READY</span>
+            <span style="font-size: 12px; color: var(--text-muted);" id="readiness-summary-text">All 20 sub-systems passed. Ready for live NSE paper observations.</span>
+          </div>
+
+          <div id="readiness-checks-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;">
+            <!-- Populated dynamically via JS -->
           </div>
         </div>
       </div>
@@ -529,6 +814,207 @@
         <button class="btn-cancel" id="modal-cancel-btn">Cancel</button>
         <button class="btn-confirm-halt" id="modal-confirm-kill-btn">Confirm Halt &amp; Flatten</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Forensic Trade Detail Modal -->
+  <div class="modal-overlay forensic-modal-overlay" id="forensic-modal" style="display: none;">
+    <div class="modal-card forensic-modal-card">
+      
+      <!-- Modal Header -->
+      <div class="forensic-modal-header">
+        <div class="forensic-title-group">
+          <div class="forensic-badge-row">
+            <span class="forensic-tag font-mono" id="modal-trade-id">TR-0000</span>
+            <span class="direction-badge" id="modal-trade-side">BUY</span>
+            <span class="account-badge font-mono" id="modal-trade-account">tiny</span>
+            <span class="status-badge" id="modal-trade-status">CLOSED</span>
+          </div>
+          <h2 class="forensic-symbol-title" id="modal-trade-symbol">BEL // CASH</h2>
+          <span class="forensic-strategy-meta" id="modal-strategy-meta">Strategy: ORB_BREAKOUT v1.0 &bull; Exited: Target reached</span>
+        </div>
+        <button class="modal-close-btn" id="forensic-modal-close" aria-label="Close modal">&times;</button>
+      </div>
+
+      <!-- Modal Body (Scrollable Forensic Sections) -->
+      <div class="forensic-modal-body">
+        
+        <!-- SECTION A: Trade Summary & Accounting Overview -->
+        <div class="forensic-section">
+          <h3 class="section-title">A. Trade Summary &amp; Accounting Overview</h3>
+          <div class="forensic-grid-4">
+            <div class="forensic-cell">
+              <span class="cell-label">Execution Price</span>
+              <span class="cell-val font-mono" id="modal-fill-price">₹0.00</span>
+              <span class="cell-sub" id="modal-requested-qty">Qty: 0 / 0 Filled</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">Exit Price</span>
+              <span class="cell-val font-mono" id="modal-exit-price">₹0.00</span>
+              <span class="cell-sub" id="modal-exit-time">--</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">Gross Trading P&amp;L</span>
+              <span class="cell-val font-mono" id="modal-gross-pnl">₹0.00</span>
+              <span class="cell-sub">Pre-fees return</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">Net Realized P&amp;L</span>
+              <span class="cell-val font-mono" id="modal-net-pnl">₹0.00</span>
+              <span class="cell-sub" id="modal-loss-tag">Attribution: NONE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION B: Original Decision Snapshot -->
+        <div class="forensic-section">
+          <div class="section-title-row">
+            <h3 class="section-title">B. Original Decision Snapshot (At Decision Time)</h3>
+            <span class="snapshot-warning">Original recorded values &bull; Never recalculated</span>
+          </div>
+          <div class="forensic-grid-3">
+            <div class="forensic-cell">
+              <span class="cell-label">Order Book Imbalance (OBI)</span>
+              <span class="cell-val font-mono" id="modal-snap-obi">Unavailable</span>
+              <span class="cell-sub">5-Level Bid/Ask skew</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">Relative Volume (RVOL)</span>
+              <span class="cell-val font-mono" id="modal-snap-rvol">Unavailable</span>
+              <span class="cell-sub">Vs intraday 20D baseline</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">Microprice</span>
+              <span class="cell-val font-mono" id="modal-snap-microprice">Unavailable</span>
+              <span class="cell-sub">Depth-weighted fair value</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">VWAP Deviation</span>
+              <span class="cell-val font-mono" id="modal-snap-vwap">Unavailable</span>
+              <span class="cell-sub">Distance from session VWAP</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">Average True Range (ATR)</span>
+              <span class="cell-val font-mono" id="modal-snap-atr">Unavailable</span>
+              <span class="cell-sub">14-period volatility</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">Bid-Ask Spread</span>
+              <span class="cell-val font-mono" id="modal-snap-spread">Unavailable</span>
+              <span class="cell-sub">Spread percentage</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">Calibrated Win Probability</span>
+              <span class="cell-val font-mono" id="modal-snap-win-prob">Unavailable</span>
+              <span class="cell-sub">Rules / ML estimate</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">Net Expected Value (EV)</span>
+              <span class="cell-val font-mono" id="modal-snap-net-ev">Unavailable</span>
+              <span class="cell-sub" id="modal-snap-ev-hurdle">Hurdle: Unavailable</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">Decision Evaluation</span>
+              <span class="cell-val" id="modal-snap-decision">ENTER</span>
+              <span class="cell-sub" id="modal-snap-reason">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION C: Execution Forensics -->
+        <div class="forensic-section">
+          <h3 class="section-title">C. Execution Forensics &amp; Depth Walking</h3>
+          <div class="forensic-grid-4">
+            <div class="forensic-cell">
+              <span class="cell-label">Market Data Tick Time</span>
+              <span class="cell-val font-mono" id="modal-exec-market-ts">Unavailable</span>
+              <span class="cell-sub">Feed ingest timestamp</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">Simulated Execution Time</span>
+              <span class="cell-val font-mono" id="modal-exec-sim-ts">Unavailable</span>
+              <span class="cell-sub" id="modal-exec-latency">Latency: 500 ms</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">VWAP Fill Price</span>
+              <span class="cell-val font-mono" id="modal-exec-vwap">₹0.00</span>
+              <span class="cell-sub">Volume-weighted across depth</span>
+            </div>
+            <div class="forensic-cell">
+              <span class="cell-label">Pessimistic Slippage</span>
+              <span class="cell-val font-mono" id="modal-exec-slippage">₹0.00</span>
+              <span class="cell-sub" id="modal-exec-slippage-ticks">1 Tick (₹0.05)</span>
+            </div>
+          </div>
+
+          <div class="levels-consumed-box">
+            <span class="cell-label" style="margin-bottom: 6px; display: block;">Depth Levels Consumed</span>
+            <div class="levels-table-wrap">
+              <table class="levels-table font-mono" id="modal-levels-table">
+                <thead>
+                  <tr>
+                    <th>LEVEL</th>
+                    <th>PRICE (₹)</th>
+                    <th class="text-right">QUANTITY FILLED</th>
+                  </tr>
+                </thead>
+                <tbody id="modal-levels-tbody">
+                  <tr><td colspan="3" class="text-muted">No depth levels recorded</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION D: Detailed Fee Breakdown -->
+        <div class="forensic-section">
+          <div class="section-title-row">
+            <h3 class="section-title">D. Indian Statutory Fee &amp; Tax Breakdown</h3>
+            <span class="fee-schedule-tag font-mono" id="modal-fee-schedule">DEFAULT_NSE_2024 (Eff: 2024-10-01)</span>
+          </div>
+          <div class="fee-breakdown-grid font-mono">
+            <div class="fee-row"><span>Total Turnover</span><strong id="fee-turnover">₹0.00</strong></div>
+            <div class="fee-row"><span>Brokerage (min 0.03%, ₹20 cap)</span><strong id="fee-brokerage">₹0.00</strong></div>
+            <div class="fee-row"><span>Securities Transaction Tax (STT 0.025%)</span><strong id="fee-stt">₹0.00</strong></div>
+            <div class="fee-row"><span>Exchange Transaction Fee (NSE 0.00297%)</span><strong id="fee-exchange">₹0.00</strong></div>
+            <div class="fee-row"><span>SEBI Turnover Charge (₹10/Cr)</span><strong id="fee-sebi">₹0.00</strong></div>
+            <div class="fee-row"><span>GST (18% on Brokerage+Exch+SEBI)</span><strong id="fee-gst">₹0.00</strong></div>
+            <div class="fee-row"><span>Stamp Duty (0.003% buy value)</span><strong id="fee-stamp">₹0.00</strong></div>
+            <div class="fee-row fee-total-row"><span>Total Statutory Taxes &amp; Fees</span><strong class="text-coral" id="fee-total">₹0.00</strong></div>
+          </div>
+        </div>
+
+        <!-- SECTION E: Final Accounting & Non-Double-Counted Reconciliation -->
+        <div class="forensic-section">
+          <h3 class="section-title">E. Final Accounting &amp; Ledger Reconciliation</h3>
+          <div class="reconciliation-box font-mono">
+            <div class="reconcile-line"><span>Gross Trading P&amp;L (Exit Value &minus; Entry Value)</span><span id="recon-gross">₹0.00</span></div>
+            <div class="reconcile-line text-coral"><span>&minus; Applicable Statutory Charges &amp; Brokerage</span><span id="recon-charges">&minus;₹0.00</span></div>
+            <div class="reconcile-line" style="border-top: 1px dashed var(--border-light); padding-top: 6px;">
+              <span>= Net Realized P&amp;L</span><strong id="recon-net" class="positive">₹0.00</strong>
+            </div>
+            <div class="reconcile-note">
+              Execution slippage of <span id="recon-slippage">₹0.00</span> is embedded in the simulated fill price. Reconciled with ledger portfolio equity.
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION F: Chronological Audit Timeline -->
+        <div class="forensic-section">
+          <h3 class="section-title">F. Chronological Audit Timeline</h3>
+          <div class="audit-timeline-list" id="modal-audit-timeline">
+            <div class="timeline-empty">No audit events recorded for this trade.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="forensic-modal-footer">
+        <span class="footer-note">Paper Desk Audit Engine &bull; Zero real broker orders placed.</span>
+        <button class="btn-groww-secondary" id="forensic-modal-dismiss-btn">Close Audit</button>
+      </div>
+
     </div>
   </div>
 

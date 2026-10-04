@@ -28,13 +28,12 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = f"sqlite+aiosqlite:///{DATA_DIR}/paperdesk.db"
 
-    # Zerodha Kite Connect
-    KITE_API_KEY: str = ""
-    KITE_API_SECRET: str = ""
-    KITE_REDIRECT_URL: str = "http://localhost:8000/login/kite/callback"
+    # Groww Market Data API (Read-Only)
+    GROWW_API_KEY: str = ""
+    GROWW_TOTP_TOKEN: str = ""
 
     # Operational
-    FEED_MODE: str = "sim"  # sim | replay | kite
+    FEED_MODE: str = "sim"  # sim | replay | groww
     PESSIMISTIC_FILLS: bool = True
     LOG_LEVEL: str = "INFO"
 

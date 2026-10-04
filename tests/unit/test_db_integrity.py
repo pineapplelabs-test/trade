@@ -14,7 +14,7 @@ from app.db.models import (
     EquityCurve,
     Fill,
     Instrument,
-    KiteSession,
+    MarketSession,
     ModelRun,
     Order,
     Position,
@@ -38,7 +38,7 @@ def test_all_12_models_have_primary_keys():
         ModelRun,
         ConfigVersion,
         StrategyVariant,
-        KiteSession,
+        MarketSession,
     ]
     assert len(models) == 12
 

@@ -1,4 +1,4 @@
-"""Unit tests for SimFeed, ReplayFeed, Kite normalization, and DataHealthMonitor."""
+"""Unit tests for SimFeed, ReplayFeed, and DataHealthMonitor."""
 
 from datetime import UTC, datetime
 
@@ -6,8 +6,6 @@ import pytest
 
 from app.feed.base import MarketTick, OrderBookDepth
 from app.feed.health import DataHealthMonitor
-from app.feed.instruments import InstrumentMaster
-from app.feed.kite_feed import normalize_kite_tick
 from app.feed.replay_feed import ReplayFeed, ReplayTickData
 from app.feed.sim_feed import SimFeed
 
@@ -83,42 +81,6 @@ async def test_replay_feed_is_deterministic():
         assert r1.last_price == r2.last_price
         assert r1.volume == r2.volume
         assert r1.feed_source == "replay"
-
-
-def test_kite_tick_normalization():
-    """Verify raw Zerodha KiteTicker payload normalizes into canonical MarketTick."""
-    raw_kite_tick = {
-        "instrument_token": 884737,
-        "last_price": 925.50,
-        "last_traded_quantity": 15,
-        "average_traded_price": 924.80,
-        "volume_traded": 1250000,
-        "total_buy_quantity": 450000,
-        "total_sell_quantity": 380000,
-        "ohlc": {"open": 915.0, "high": 930.0, "low": 912.0, "close": 925.50},
-        "depth": {
-            "buy": [
-                {"price": 925.45, "quantity": 500, "orders": 3},
-                {"price": 925.40, "quantity": 800, "orders": 5},
-            ],
-            "sell": [
-                {"price": 925.55, "quantity": 400, "orders": 2},
-                {"price": 925.60, "quantity": 1200, "orders": 7},
-            ],
-        },
-    }
-
-    master = InstrumentMaster()
-    normalized = normalize_kite_tick(raw_kite_tick, master)
-
-    assert normalized.token == 884737
-    assert normalized.symbol == "TATAMOTORS"
-    assert normalized.last_price == 925.50
-    assert normalized.last_quantity == 15
-    assert normalized.average_traded_price == 924.80
-    assert normalized.depth.best_bid == 925.45
-    assert normalized.depth.best_ask == 925.55
-    assert normalized.feed_source == "kite"
 
 
 def test_data_health_stale_detection():

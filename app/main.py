@@ -7,11 +7,16 @@ from pathlib import Path
 import structlog
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.accounts import router as accounts_router
+from app.api.analytics import router as analytics_router
 from app.api.health import router as health_router
+from app.api.premarket import router as premarket_router
+from app.api.readiness import router as readiness_router
+from app.api.scanner import router as scanner_router
+from app.api.trades import router as trades_router
 from app.auth.routes import router as auth_router
 from app.config import get_settings
 from app.db.session import init_db
@@ -30,12 +35,29 @@ async def lifespan(app: FastAPI):
     # Initialize database tables and seed configured accounts
     await init_db()
 
+    # Load any existing persisted paper trades and open positions from SQLite
+    from app.portfolio.ledger import global_trade_ledger
+    await global_trade_ledger.load_trades_from_db()
+
+    # Seed initial authentic paper trades into ledger if completely empty
+    from app.portfolio.seed_trades import seed_demo_trades_if_empty
+    seed_demo_trades_if_empty()
+
+    # Start Groww live feed if configured
+    if settings.FEED_MODE == "groww":
+        from app.feed.groww_feed import groww_feed
+        await groww_feed.connect()
+
     # Start live telemetry WebSocket background task
     broadcast_task = asyncio.create_task(manager.start_broadcaster())
 
     yield
 
     # Clean shutdown
+    if settings.FEED_MODE == "groww":
+        from app.feed.groww_feed import groww_feed
+        await groww_feed.disconnect()
+
     broadcast_task.cancel()
     try:
         await broadcast_task
@@ -64,6 +86,11 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(health_router)
 app.include_router(accounts_router)
+app.include_router(scanner_router)
+app.include_router(trades_router)
+app.include_router(analytics_router)
+app.include_router(readiness_router)
+app.include_router(premarket_router)
 
 
 # WebSocket live update endpoint
@@ -80,30 +107,6 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
     except Exception:
         manager.disconnect(websocket)
-
-
-# Zerodha Kite OAuth redirect handler stubs
-@app.get("/login/kite")
-async def kite_login():
-    """Redirect to Zerodha login URL."""
-    if not settings.KITE_API_KEY:
-        return HTMLResponse(
-            "<h3>Kite API Key not configured. Please set KITE_API_KEY in .env</h3>"
-            "<p><a href='/'>Return to Paper Desk</a></p>"
-        )
-    kite_url = f"https://kite.zerodha.com/connect/login?v=3&api_key={settings.KITE_API_KEY}"
-    return HTMLResponse(f"<script>window.location.href = '{kite_url}';</script>")
-
-
-@app.get("/login/kite/callback")
-async def kite_callback(request_token: str | None = None, status: str | None = None):
-    """Handle callback from Zerodha with request_token."""
-    return HTMLResponse(
-        f"<h3>Zerodha Kite Login Received</h3>"
-        f"<p>Status: {status}</p>"
-        f"<p>Request token received. Session exchange will be completed in Milestone 2.</p>"
-        f"<p><a href='/'>Return to Dashboard</a></p>"
-    )
 
 
 # Serve Static Assets & Main Dashboard

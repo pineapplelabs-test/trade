@@ -195,12 +195,161 @@ class StrategyVariant(Base):
     notes: Mapped[str] = mapped_column(Text, default="")
 
 
-class KiteSession(Base):
-    """Encrypted Zerodha Kite Connect daily access token."""
+class MarketSession(Base):
+    """Encrypted market data daily access token / credentials."""
 
-    __tablename__ = "kite_session"
+    __tablename__ = "market_session"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     encrypted_token: Mapped[str] = mapped_column(Text, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+# Backward-compatible alias
+KiteSession = MarketSession
+
+
+# =========================================================================
+# PHASE FINAL: DURABLE PERSISTENCE MODELS FOR PAPER TRADES & AUDITS
+# =========================================================================
+
+class DurableTradeRecord(Base):
+    """Durable record of completed and open paper trades."""
+
+    __tablename__ = "durable_trades"
+
+    trade_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    account_id: Mapped[str] = mapped_column(String(32), ForeignKey("accounts.id"), index=True)
+    symbol: Mapped[str] = mapped_column(String(32), index=True)
+    strategy_name: Mapped[str] = mapped_column(String(64))
+    strategy_version: Mapped[str] = mapped_column(String(32))
+    direction: Mapped[str] = mapped_column(String(8), default="BUY")
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    entry_price: Mapped[float] = mapped_column(Float, nullable=False)
+    exit_price: Mapped[float] = mapped_column(Float, nullable=False)
+    entry_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+    exit_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+    gross_pnl: Mapped[float] = mapped_column(Float, default=0.0)
+    total_charges: Mapped[float] = mapped_column(Float, default=0.0)
+    slippage: Mapped[float] = mapped_column(Float, default=0.0)
+    net_pnl: Mapped[float] = mapped_column(Float, default=0.0)
+    r_multiple: Mapped[float] = mapped_column(Float, default=0.0)
+    trade_status: Mapped[str] = mapped_column(String(32), default="CLOSED")
+    exit_reason: Mapped[str] = mapped_column(String(64), default="")
+    loss_tag: Mapped[str] = mapped_column(String(32), default="NONE")
+    decision_reason: Mapped[str] = mapped_column(Text, default="")
+    environment: Mapped[str] = mapped_column(String(32), default="PAPER_LIVE", index=True)  # DEMO vs PAPER_LIVE
+    predicted_probability: Mapped[float] = mapped_column(Float, default=0.50)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class DurableDecisionSnapshot(Base):
+    """Immutable record of the exact indicator values observed at decision time."""
+
+    __tablename__ = "durable_decision_snapshots"
+
+    trade_id: Mapped[str] = mapped_column(String(64), ForeignKey("durable_trades.trade_id"), primary_key=True)
+    symbol: Mapped[str] = mapped_column(String(32))
+    eval_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    last_price: Mapped[float] = mapped_column(Float, default=0.0)
+    bid: Mapped[float] = mapped_column(Float, default=0.0)
+    ask: Mapped[float] = mapped_column(Float, default=0.0)
+    spread: Mapped[float] = mapped_column(Float, default=0.0)
+    obi: Mapped[float] = mapped_column(Float, default=0.0)
+    microprice: Mapped[float] = mapped_column(Float, default=0.0)
+    rvol: Mapped[float] = mapped_column(Float, default=1.0)
+    vwap: Mapped[float] = mapped_column(Float, default=0.0)
+    vwap_deviation: Mapped[float] = mapped_column(Float, default=0.0)
+    atr: Mapped[float] = mapped_column(Float, default=0.0)
+    strategy_signal: Mapped[str] = mapped_column(String(32), default="ENTER")
+    predicted_probability: Mapped[float] = mapped_column(Float, default=0.50)
+    expected_reward: Mapped[float] = mapped_column(Float, default=0.0)
+    expected_loss: Mapped[float] = mapped_column(Float, default=0.0)
+    expected_costs: Mapped[float] = mapped_column(Float, default=0.0)
+    calculated_ev: Mapped[float] = mapped_column(Float, default=0.0)
+    minimum_hurdle: Mapped[float] = mapped_column(Float, default=0.0)
+    decision: Mapped[str] = mapped_column(String(32), default="ENTER")
+    rejection_reason: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
+
+class DurableExecutionForensics(Base):
+    """Immutable simulated depth-walking fill details and latency."""
+
+    __tablename__ = "durable_execution_forensics"
+
+    trade_id: Mapped[str] = mapped_column(String(64), ForeignKey("durable_trades.trade_id"), primary_key=True)
+    market_data_ts: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    decision_ts: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    simulated_execution_ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    configured_latency_ms: Mapped[int] = mapped_column(Integer, default=500)
+    best_bid: Mapped[float | None] = mapped_column(Float, nullable=True)
+    best_ask: Mapped[float | None] = mapped_column(Float, nullable=True)
+    requested_quantity: Mapped[int] = mapped_column(Integer, default=1)
+    filled_quantity: Mapped[int] = mapped_column(Integer, default=1)
+    unfilled_quantity: Mapped[int] = mapped_column(Integer, default=0)
+    vwap_fill_price: Mapped[float] = mapped_column(Float, default=0.0)
+    slippage_ticks: Mapped[int] = mapped_column(Integer, default=1)
+    slippage_amount: Mapped[float] = mapped_column(Float, default=0.0)
+    levels_consumed_json: Mapped[str] = mapped_column(Text, default="[]")
+    depth_snapshot_json: Mapped[str] = mapped_column(Text, default="{}")
+
+
+class DurableFeeBreakdown(Base):
+    """Detailed statutory taxes and brokerage attached to a specific trade."""
+
+    __tablename__ = "durable_fee_breakdowns"
+
+    trade_id: Mapped[str] = mapped_column(String(64), ForeignKey("durable_trades.trade_id"), primary_key=True)
+    schedule_id: Mapped[str] = mapped_column(String(64), default="DEFAULT_NSE_2024")
+    effective_date: Mapped[str] = mapped_column(String(32), default="2024-10-01")
+    turnover: Mapped[float] = mapped_column(Float, default=0.0)
+    buy_value: Mapped[float] = mapped_column(Float, default=0.0)
+    sell_value: Mapped[float] = mapped_column(Float, default=0.0)
+    brokerage: Mapped[float] = mapped_column(Float, default=0.0)
+    stt: Mapped[float] = mapped_column(Float, default=0.0)
+    exchange_txn: Mapped[float] = mapped_column(Float, default=0.0)
+    sebi: Mapped[float] = mapped_column(Float, default=0.0)
+    gst: Mapped[float] = mapped_column(Float, default=0.0)
+    stamp_duty: Mapped[float] = mapped_column(Float, default=0.0)
+    total_charges: Mapped[float] = mapped_column(Float, default=0.0)
+
+
+class DurableAuditEvent(Base):
+    """Chronological event audit log for individual paper trades and risk checks."""
+
+    __tablename__ = "durable_audit_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    event_id: Mapped[str] = mapped_column(String(64), index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+    account_id: Mapped[str] = mapped_column(String(32), index=True)
+    symbol: Mapped[str] = mapped_column(String(32), index=True)
+    trade_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    event_type: Mapped[str] = mapped_column(String(64), index=True)
+    data_json: Mapped[str] = mapped_column(Text, default="{}")
+    reason: Mapped[str] = mapped_column(Text, default="")
+
+
+class DurableMarketSnapshot(Base):
+    """Persisted market state snapshots for audits, replay, and strategy validation."""
+
+    __tablename__ = "durable_market_snapshots"
+
+    snapshot_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    symbol: Mapped[str] = mapped_column(String(32), index=True)
+    market_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    last_price: Mapped[float] = mapped_column(Float, default=0.0)
+    volume: Mapped[int] = mapped_column(Integer, default=0)
+    vwap: Mapped[float] = mapped_column(Float, default=0.0)
+    open: Mapped[float] = mapped_column(Float, default=0.0)
+    high: Mapped[float] = mapped_column(Float, default=0.0)
+    low: Mapped[float] = mapped_column(Float, default=0.0)
+    close: Mapped[float] = mapped_column(Float, default=0.0)
+    bids_json: Mapped[str] = mapped_column(Text, default="[]")
+    asks_json: Mapped[str] = mapped_column(Text, default="[]")
+    source: Mapped[str] = mapped_column(String(32), default="groww")
+    data_age_ms: Mapped[float] = mapped_column(Float, default=0.0)
+    is_complete_5_level: Mapped[bool] = mapped_column(Boolean, default=True)
+

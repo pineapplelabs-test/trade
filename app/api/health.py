@@ -1,4 +1,4 @@
-"""System health and operational telemetry endpoints."""
+"""System health and operational telemetry endpoints with Market Data Quality Metrics."""
 
 import zoneinfo
 from datetime import UTC, datetime
@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.db.session import get_db
+from app.feed.calendar import get_market_session_phase
+from app.feed.provider import get_market_data_provider
 
 router = APIRouter(prefix="/api", tags=["api"])
 settings = get_settings()
@@ -30,27 +32,42 @@ async def get_health(db: Annotated[AsyncSession, Depends(get_db)]) -> dict:
     except Exception:
         db_ok = False
 
-    # Check market session (NSE 09:15 - 15:30 IST Mon-Fri)
-    is_weekday = now_ist.weekday() < 5
-    current_time_str = now_ist.strftime("%H:%M:%S")
-    is_market_hours = is_weekday and ("09:15:00" <= current_time_str <= "15:30:00")
+    provider = get_market_data_provider()
+    session_phase = get_market_session_phase(now_utc)
+    is_market_open = session_phase == "REGULAR"
+
+    # Compute quote age and depth age for a sample liquid benchmark (e.g. BEL)
+    quote_age_ms = 0.0
+    depth_age_ms = 0.0
+    tick = await provider.get_latest_tick("BEL")
+    if tick:
+        delta = (now_utc - tick.timestamp).total_seconds() * 1000.0
+        quote_age_ms = round(max(0.0, delta), 1)
+        depth_age_ms = round(max(0.0, delta), 1)
+
+    connection_state = "CONNECTED" if provider.is_connected() else "DISCONNECTED"
+    if quote_age_ms > 3000.0 and connection_state == "CONNECTED":
+        connection_state = "DEGRADED"
 
     return {
-        "status": "healthy" if db_ok else "degraded",
+        "status": "healthy" if db_ok and connection_state != "DISCONNECTED" else "degraded",
         "timestamp_utc": now_utc.isoformat(),
         "timestamp_ist": now_ist.strftime("%Y-%m-%d %H:%M:%S IST"),
         "clock_ist": now_ist.strftime("%H:%M:%S"),
         "feed": {
             "mode": settings.FEED_MODE,
-            "status": "active" if settings.FEED_MODE == "sim" else "offline",
-            "stale": False,
+            "source": provider.get_source_name(),
+            "connection": connection_state,
+            "quote_age_ms": quote_age_ms,
+            "depth_age_ms": depth_age_ms,
+            "stale": quote_age_ms > 3000.0,
         },
         "database": {
             "connected": db_ok,
         },
         "market": {
-            "open": is_market_hours,
-            "session": "REGULAR" if is_market_hours else "CLOSED",
+            "open": is_market_open,
+            "session": session_phase,
         },
         "model": {
             "active": "baseline_rules",
