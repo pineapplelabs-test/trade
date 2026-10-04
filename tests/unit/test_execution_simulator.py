@@ -107,3 +107,26 @@ def test_integer_share_rounding_and_unaffordability():
     assert isinstance(size_res_ok.shares, int)
     assert size_res_ok.affordable is True
     assert size_res_ok.allocated_capital == 300.0
+
+
+def test_limit_order_never_fills_through_limit() -> None:
+    depth = OrderBookDepth(
+        bids=[DepthLevel(price=99.95, quantity=500)],
+        asks=[
+            DepthLevel(price=100.00, quantity=100),
+            DepthLevel(price=100.10, quantity=100),
+        ],
+    )
+    sim = ExecutionSimulator(
+        profile=ExecutionProfile(mode=ProfileMode.NORMAL, slippage_ticks=0, latency_ms=0)
+    )
+    order = SimulatedOrder(
+        symbol="INFY",
+        side=OrderSide.BUY,
+        requested_quantity=150,
+        limit_price=100.00,
+    )
+    fill = sim.execute_order(order, depth, tick_size=0.01)
+    assert fill.filled_quantity == 100
+    assert fill.remaining_quantity == 50
+    assert fill.average_fill_price == pytest.approx(100.00)
