@@ -34,9 +34,9 @@ async def get_scanner_candidates(account: str = Query("tiny")) -> dict[str, Any]
     capital = ACCOUNT_CAPITALS[account]
     ev_hurdle = ACCOUNT_EV_HURDLES[account]
     decision_timestamp = datetime.now(UTC)
-    funnel = UniverseFunnel(
-        FunnelConfig(max_position_pct=0.50 if account == "tiny" else 0.20)
-    )
+    account_cfg = get_accounts_config().get(account, {})
+    configured_position_pct = float(account_cfg.get("max_position_pct", 50.0)) / 100.0
+    funnel = UniverseFunnel(FunnelConfig(max_position_pct=configured_position_pct))
     provider = get_market_data_provider()
     results: list[dict[str, Any]] = []
     funnel_stats = {"monitored": 0, "liquid": 0, "approved": 0, "rejected": 0}
