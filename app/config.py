@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     FEED_MODE: str = "sim"  # sim | replay | groww
     PESSIMISTIC_FILLS: bool = True
     LOG_LEVEL: str = "INFO"
+    CORS_ORIGINS: str = "http://localhost:8000,http://127.0.0.1:8000"
 
     # Optional alerts
     TELEGRAM_BOT_TOKEN: str = ""
