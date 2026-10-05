@@ -179,7 +179,8 @@ class GrowwFeed(FeedBase):
         if not self.api_client:
             return None
         try:
-            raw = self.api_client.get_quote(trading_symbol=symbol, exchange="NSE", segment="CASH")
+            groww_sym = {"TATAMOTORS": "TMPV"}.get(symbol, symbol)
+            raw = self.api_client.get_quote(trading_symbol=groww_sym, exchange="NSE", segment="CASH")
             if raw:
                 return normalize_groww_quote(symbol, raw, self.master)
         except Exception as e:
@@ -214,8 +215,8 @@ class GrowwFeed(FeedBase):
                                 pass
                 except Exception as e:
                     logger.debug("groww_poll_error", symbol=symbol, error=str(e))
-                # Slight throttle between symbol requests
-                await asyncio.sleep(0.15)
+                # Slight throttle between symbol requests to stay within rate limits
+                await asyncio.sleep(0.35)
             # Interval between full scan cycles
             await asyncio.sleep(1.0)
 
