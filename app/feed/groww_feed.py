@@ -193,8 +193,8 @@ class GrowwFeed(FeedBase):
 
     async def _poll_quotes_loop(self) -> None:
         """Continuous background loop updating quotes for active watchlist."""
-        # Default priority symbols if none subscribed yet
-        default_symbols = ["RELIANCE", "TMPV", "BHARTIARTL", "BEL", "INFY", "TCS", "HDFCBANK", "ICICIBANK", "TATASTEEL", "SBIN"]
+        # Default priority symbols from instrument master
+        default_symbols = [inst.symbol for inst in self.master.get_tradable_equities()]
 
         while self.is_running:
             active_symbols = list(self.subscribed_symbols) or default_symbols
@@ -205,6 +205,10 @@ class GrowwFeed(FeedBase):
                     tick = await self.fetch_live_quote(symbol)
                     if tick:
                         self.latest_ticks[symbol] = tick
+                        if symbol == "TATAMOTORS":
+                            self.latest_ticks["TMPV"] = tick
+                        elif symbol == "TMPV":
+                            self.latest_ticks["TATAMOTORS"] = tick
                         try:
                             self._tick_queue.put_nowait(tick)
                         except asyncio.QueueFull:
@@ -215,10 +219,10 @@ class GrowwFeed(FeedBase):
                                 pass
                 except Exception as e:
                     logger.debug("groww_poll_error", symbol=symbol, error=str(e))
-                # Slight throttle between symbol requests to stay within rate limits
-                await asyncio.sleep(0.35)
-            # Interval between full scan cycles
-            await asyncio.sleep(1.0)
+                # Fast throttle between symbol requests to stay within rate limits and under 3000ms quote age
+                await asyncio.sleep(0.10)
+            # Short breather between full scan cycles
+            await asyncio.sleep(0.20)
 
     async def stream_ticks(self) -> AsyncGenerator[MarketTick, None]:
         """Yield normalized MarketTick events from queue."""

@@ -17,7 +17,7 @@ from app.universe.funnel import FunnelConfig, UniverseFunnel
 router = APIRouter(prefix="/api/scanner", tags=["scanner"])
 settings = get_settings()
 master = InstrumentMaster()
-validator = MarketDataValidator()
+validator = MarketDataValidator(max_quote_age_ms=6000 if settings.FEED_MODE == "groww" else 3000)
 
 
 @router.get("")
@@ -45,7 +45,7 @@ async def get_scanner_candidates(account: str = Query("tiny")) -> dict[str, Any]
             continue
 
         # 1. Freshness & Data Quality Validation
-        freshness_status, freshness_reason = validator.validate_tick(tick, decision_timestamp=decision_timestamp)
+        freshness_status, freshness_reason = validator.validate_tick(tick, decision_timestamp=datetime.now(UTC))
         if freshness_status != FreshnessStatus.VALID:
             funnel_stats["rejected"] += 1
             results.append({
