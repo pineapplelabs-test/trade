@@ -42,12 +42,24 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_CHAT_ID: str = ""
 
+    # Security & CORS
+    CORS_ALLOWED_ORIGINS: list[str] = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:3000",
+    ]
+    COOKIE_SECURE: bool = False
+
     def model_post_init(self, __context: Any) -> None:
         if self.ENVIRONMENT.lower() in {"production", "prod"}:
-            if self.ADMIN_PASSWORD == "ChangeMeNow123!":
-                raise ValueError("SECURITY VIOLATION: Default ADMIN_PASSWORD cannot be used in production environment.")
-            if "change-this" in self.SECRET_KEY:
-                raise ValueError("SECURITY VIOLATION: Default SECRET_KEY cannot be used in production environment.")
+            if self.ADMIN_PASSWORD in {"ChangeMeNow123!", "", "admin", "adminpassword"} or len(self.ADMIN_PASSWORD) < 8:
+                raise ValueError("SECURITY VIOLATION: Default or empty ADMIN_PASSWORD cannot be used in production environment.")
+            if "change-this" in self.SECRET_KEY or self.SECRET_KEY == "" or len(self.SECRET_KEY) < 16:
+                raise ValueError("SECURITY VIOLATION: Default or empty SECRET_KEY cannot be used in production environment.")
+            if self.ENCRYPTION_KEY in {"W3uG_1H9m3n8xK9Z8gV2eY7wQ6sL5pM4rT2bN1vC0xA=", ""} or len(self.ENCRYPTION_KEY) < 16:
+                raise ValueError("SECURITY VIOLATION: Default or empty ENCRYPTION_KEY cannot be used in production environment.")
+            if "*" in self.CORS_ALLOWED_ORIGINS:
+                raise ValueError("SECURITY VIOLATION: Wildcard CORS origins are forbidden in production environment.")
 
 
 def load_yaml(file_path: Path) -> dict[str, Any]:
@@ -68,6 +80,20 @@ def get_settings() -> Settings:
 def get_accounts_config() -> dict[str, Any]:
     res = load_yaml(CONFIG_DIR / "accounts.yaml").get("accounts", {})
     return res if isinstance(res, dict) else {}
+
+
+def get_account_spec(account_id: str) -> dict[str, Any]:
+    """Retrieve validated configuration for a specific account with fallback defaults."""
+    accts = get_accounts_config()
+    if account_id in accts and isinstance(accts[account_id], dict):
+        return dict(accts[account_id])
+    # Default fallback spec if not in yaml
+    defaults = {
+        "tiny": {"starting_capital": 1000.0, "max_position_pct": 50.0, "max_open_positions": 2, "ev_min_pct": 0.15, "risk_per_trade_pct": 1.0},
+        "real5k": {"starting_capital": 5000.0, "max_position_pct": 50.0, "max_open_positions": 2, "ev_min_pct": 0.12, "risk_per_trade_pct": 1.0},
+        "shadow": {"starting_capital": 100000.0, "max_position_pct": 20.0, "max_open_positions": 5, "ev_min_pct": 0.10, "risk_per_trade_pct": 0.5},
+    }
+    return defaults.get(account_id, {"starting_capital": 1000.0, "max_position_pct": 50.0, "max_open_positions": 2, "ev_min_pct": 0.15, "risk_per_trade_pct": 1.0})
 
 
 def get_charges_config() -> dict[str, Any]:

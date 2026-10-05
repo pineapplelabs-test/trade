@@ -240,7 +240,7 @@ class DurableTradeRecord(Base):
     loss_tag: Mapped[str] = mapped_column(String(32), default="NONE")
     decision_reason: Mapped[str] = mapped_column(Text, default="")
     environment: Mapped[str] = mapped_column(String(32), default="PAPER_LIVE", index=True)  # DEMO vs PAPER_LIVE
-    predicted_probability: Mapped[float] = mapped_column(Float, default=0.50)
+    predicted_probability: Mapped[float | None] = mapped_column(Float, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
@@ -263,7 +263,7 @@ class DurableDecisionSnapshot(Base):
     vwap_deviation: Mapped[float] = mapped_column(Float, default=0.0)
     atr: Mapped[float] = mapped_column(Float, default=0.0)
     strategy_signal: Mapped[str] = mapped_column(String(32), default="ENTER")
-    predicted_probability: Mapped[float] = mapped_column(Float, default=0.50)
+    predicted_probability: Mapped[float | None] = mapped_column(Float, nullable=True, default=None)
     expected_reward: Mapped[float] = mapped_column(Float, default=0.0)
     expected_loss: Mapped[float] = mapped_column(Float, default=0.0)
     expected_costs: Mapped[float] = mapped_column(Float, default=0.0)

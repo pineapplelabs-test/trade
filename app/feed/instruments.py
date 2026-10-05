@@ -17,21 +17,36 @@ class InstrumentMeta:
     tick_size: float
     active: bool
     surveillance_flag: str  # NORMAL, ASM, GSM
+    series: str = "EQ"       # EQ, BE, BZ, INDEX
+    instrument_type: str = "EQUITY"  # EQUITY, INDEX
+    provenance: str = "NSE_EQ_SEED_2024"
 
 
-# Liquid core NSE EQ universe seed (top liquid equities for offline/testing)
+# Benchmark Index Reference (Not an equity candidate for scanning/trading)
+BENCHMARK_INDEX = InstrumentMeta(
+    token=256265,
+    symbol="NIFTY 50",
+    name="Nifty 50 Index",
+    sector="Index",
+    tick_size=0.05,
+    active=True,
+    surveillance_flag="NORMAL",
+    series="INDEX",
+    instrument_type="INDEX",
+)
+
+# Liquid core NSE EQ universe seed (Cash equity ONLY: series EQ)
 DEFAULT_INSTRUMENTS: list[InstrumentMeta] = [
-    InstrumentMeta(token=256265, symbol="NIFTY 50", name="Nifty 50 Index", sector="Index", tick_size=0.05, active=True, surveillance_flag="NORMAL"),
-    InstrumentMeta(token=738561, symbol="RELIANCE", name="Reliance Industries Ltd", sector="Energy", tick_size=0.05, active=True, surveillance_flag="NORMAL"),
-    InstrumentMeta(token=884737, symbol="TATAMOTORS", name="Tata Motors Ltd", sector="Automobile", tick_size=0.05, active=True, surveillance_flag="NORMAL"),
-    InstrumentMeta(token=341249, symbol="HDFCBANK", name="HDFC Bank Ltd", sector="Financials", tick_size=0.05, active=True, surveillance_flag="NORMAL"),
-    InstrumentMeta(token=779521, symbol="SBIN", name="State Bank of India", sector="Financials", tick_size=0.05, active=True, surveillance_flag="NORMAL"),
-    InstrumentMeta(token=424961, symbol="ITC", name="ITC Ltd", sector="FMCG", tick_size=0.05, active=True, surveillance_flag="NORMAL"),
-    InstrumentMeta(token=895745, symbol="TATASTEEL", name="Tata Steel Ltd", sector="Metals", tick_size=0.05, active=True, surveillance_flag="NORMAL"),
-    InstrumentMeta(token=1270529, symbol="ICICIBANK", name="ICICI Bank Ltd", sector="Financials", tick_size=0.05, active=True, surveillance_flag="NORMAL"),
-    InstrumentMeta(token=408065, symbol="INFY", name="Infosys Ltd", sector="Technology", tick_size=0.05, active=True, surveillance_flag="NORMAL"),
-    InstrumentMeta(token=2714625, symbol="BHARTIARTL", name="Bharti Airtel Ltd", sector="Telecom", tick_size=0.05, active=True, surveillance_flag="NORMAL"),
-    InstrumentMeta(token=3861249, symbol="BEL", name="Bharat Electronics Ltd", sector="Defense", tick_size=0.05, active=True, surveillance_flag="NORMAL"),
+    InstrumentMeta(token=738561, symbol="RELIANCE", name="Reliance Industries Ltd", sector="Energy", tick_size=0.05, active=True, surveillance_flag="NORMAL", series="EQ", instrument_type="EQUITY"),
+    InstrumentMeta(token=884737, symbol="TATAMOTORS", name="Tata Motors Ltd", sector="Automobile", tick_size=0.05, active=True, surveillance_flag="NORMAL", series="EQ", instrument_type="EQUITY"),
+    InstrumentMeta(token=341249, symbol="HDFCBANK", name="HDFC Bank Ltd", sector="Financials", tick_size=0.05, active=True, surveillance_flag="NORMAL", series="EQ", instrument_type="EQUITY"),
+    InstrumentMeta(token=779521, symbol="SBIN", name="State Bank of India", sector="Financials", tick_size=0.05, active=True, surveillance_flag="NORMAL", series="EQ", instrument_type="EQUITY"),
+    InstrumentMeta(token=424961, symbol="ITC", name="ITC Ltd", sector="FMCG", tick_size=0.05, active=True, surveillance_flag="NORMAL", series="EQ", instrument_type="EQUITY"),
+    InstrumentMeta(token=895745, symbol="TATASTEEL", name="Tata Steel Ltd", sector="Metals", tick_size=0.05, active=True, surveillance_flag="NORMAL", series="EQ", instrument_type="EQUITY"),
+    InstrumentMeta(token=1270529, symbol="ICICIBANK", name="ICICI Bank Ltd", sector="Financials", tick_size=0.05, active=True, surveillance_flag="NORMAL", series="EQ", instrument_type="EQUITY"),
+    InstrumentMeta(token=408065, symbol="INFY", name="Infosys Ltd", sector="Technology", tick_size=0.05, active=True, surveillance_flag="NORMAL", series="EQ", instrument_type="EQUITY"),
+    InstrumentMeta(token=2714625, symbol="BHARTIARTL", name="Bharti Airtel Ltd", sector="Telecom", tick_size=0.05, active=True, surveillance_flag="NORMAL", series="EQ", instrument_type="EQUITY"),
+    InstrumentMeta(token=3861249, symbol="BEL", name="Bharat Electronics Ltd", sector="Defense", tick_size=0.05, active=True, surveillance_flag="NORMAL", series="EQ", instrument_type="EQUITY"),
 ]
 
 
@@ -41,8 +56,13 @@ class InstrumentMaster:
     def __init__(self, instruments: list[InstrumentMeta] | None = None) -> None:
         self._instruments: dict[int, InstrumentMeta] = {}
         self._symbol_map: dict[str, int] = {}
+        self.universe_source = "NSE_EQ_SEED_LIST"
+        self.universe_version = "2024.10"
 
-        initial = instruments or DEFAULT_INSTRUMENTS
+        # Always register benchmark index for reference lookups
+        self.add_instrument(BENCHMARK_INDEX)
+
+        initial = instruments if instruments is not None else DEFAULT_INSTRUMENTS
         for inst in initial:
             self.add_instrument(inst)
 
@@ -59,16 +79,22 @@ class InstrumentMaster:
             return self._instruments.get(token)
         return None
 
-    def list_tradable_tokens(self, allow_asm_gsm: bool = False) -> list[int]:
-        """Return active tokens, excluding ASM/GSM surveillance categories if specified."""
-        tokens = []
+    def get_tradable_equities(self, allow_asm_gsm: bool = False) -> list[InstrumentMeta]:
+        """Return active cash equities (series EQ only), strictly excluding indices."""
+        equities = []
         for inst in self._instruments.values():
             if not inst.active:
                 continue
+            if inst.series != "EQ" or inst.instrument_type != "EQUITY":
+                continue
             if not allow_asm_gsm and inst.surveillance_flag in ("ASM", "GSM"):
                 continue
-            tokens.append(inst.token)
-        return tokens
+            equities.append(inst)
+        return equities
+
+    def list_tradable_tokens(self, allow_asm_gsm: bool = False) -> list[int]:
+        """Return active equity tokens (series EQ only), excluding indices and surveillance."""
+        return [inst.token for inst in self.get_tradable_equities(allow_asm_gsm=allow_asm_gsm)]
 
     def export_parquet(self, file_path: Path | None = None) -> Path:
         """Export catalog to partitioned Parquet table."""
@@ -83,6 +109,8 @@ class InstrumentMaster:
             "tick_size": [i.tick_size for i in self._instruments.values()],
             "active": [i.active for i in self._instruments.values()],
             "surveillance_flag": [i.surveillance_flag for i in self._instruments.values()],
+            "series": [i.series for i in self._instruments.values()],
+            "instrument_type": [i.instrument_type for i in self._instruments.values()],
         }
         df = pl.DataFrame(data)
         df.write_parquet(path)

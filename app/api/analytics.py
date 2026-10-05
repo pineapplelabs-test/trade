@@ -5,6 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.config import get_account_spec
 from app.portfolio.ledger import global_trade_ledger
 
 IST = zoneinfo.ZoneInfo("Asia/Kolkata")
@@ -12,19 +13,14 @@ router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
 VALID_ACCOUNTS = {"tiny", "shadow", "real5k"}
 
-ACCOUNT_CONFIGS = {
-    "tiny": {"starting_capital": 1000.0, "min_sample_threshold": 30},
-    "shadow": {"starting_capital": 100000.0, "min_sample_threshold": 30},
-    "real5k": {"starting_capital": 5000.0, "min_sample_threshold": 30},
-}
-
 
 def compute_edge_health(account_id: str, environment: str = "PAPER_LIVE") -> dict[str, Any]:
     """Calculate statistical edge health, fee drag, and sample quality for an isolated account and environment."""
-    cfg = ACCOUNT_CONFIGS.get(account_id, {"starting_capital": 1000.0, "min_sample_threshold": 30})
-    starting_capital = cfg["starting_capital"]
-    min_sample = cfg["min_sample_threshold"]
+    spec = get_account_spec(account_id)
+    starting_capital = float(spec.get("starting_capital", 1000.0))
+    min_sample = 30
 
+    display_env = "ALL (DIAGNOSTIC ONLY)" if environment == "ALL" else environment
     all_trades = global_trade_ledger.list_trades_for_account(account_id, limit=1000)
     if environment == "ALL":
         trades = all_trades
@@ -36,7 +32,7 @@ def compute_edge_health(account_id: str, environment: str = "PAPER_LIVE") -> dic
     if total_closed_trades == 0:
         return {
             "account_id": account_id,
-            "environment": environment,
+            "environment": display_env,
             "starting_capital": starting_capital,
             "current_equity": starting_capital,
             "realized_net_pnl": 0.0,
@@ -62,6 +58,8 @@ def compute_edge_health(account_id: str, environment: str = "PAPER_LIVE") -> dic
             "has_sufficient_sample": False,
             "strategy_health_status": "INSUFFICIENT SAMPLE",
             "status_explanation": f"Sample size (0) is below required minimum threshold ({min_sample}) for statistical validity.",
+            "date_range": {"start": None, "end": None},
+            "statistical_caveats": "Independent trade assumption required. No empirical edge proved without out-of-sample validation.",
             "accounting_decomposition": {
                 "gross_pnl": 0.0,
                 "transaction_charges": 0.0,
@@ -121,6 +119,10 @@ def compute_edge_health(account_id: str, environment: str = "PAPER_LIVE") -> dic
 
     current_equity = round(starting_capital + net_pnl, 2)
 
+    # Date range of trades
+    start_ts = min(t.entry_timestamp for t in trades).isoformat() if trades else None
+    end_ts = max(t.exit_timestamp for t in trades).isoformat() if trades else None
+
     has_sufficient = total_closed_trades >= min_sample
     if not has_sufficient:
         status = "INSUFFICIENT SAMPLE"
@@ -137,15 +139,15 @@ def compute_edge_health(account_id: str, environment: str = "PAPER_LIVE") -> dic
         t_stat = (net_expectancy / std_err) if std_err > 0 else 0.0
 
         if t_stat >= 2.0:
-            status = "POSITIVE HISTORICAL EDGE"
-            explanation = f"Statistically positive edge confirmed across {total_closed_trades} trades (t-stat {round(t_stat, 2)} >= 2.0, p < 0.05)."
+            status = "HISTORICAL PERFORMANCE (PRELIMINARY)"
+            explanation = f"Observed positive historical performance across {total_closed_trades} trades (t-stat {round(t_stat, 2)} >= 2.0). Requires walk-forward out-of-sample validation."
         else:
             status = "EDGE UNDER OBSERVATION"
             explanation = f"Net expectancy is positive ({round(net_expectancy, 2)}), but variance remains high (t-stat {round(t_stat, 2)} < 2.0). Maintain observation."
 
     return {
         "account_id": account_id,
-        "environment": environment,
+        "environment": display_env,
         "starting_capital": round(starting_capital, 2),
         "current_equity": current_equity,
         "realized_net_pnl": round(net_pnl, 2),
@@ -171,6 +173,8 @@ def compute_edge_health(account_id: str, environment: str = "PAPER_LIVE") -> dic
         "has_sufficient_sample": has_sufficient,
         "strategy_health_status": status,
         "status_explanation": explanation,
+        "date_range": {"start": start_ts, "end": end_ts},
+        "statistical_caveats": "Independent trade assumption required. No empirical edge proved without out-of-sample validation.",
         "accounting_decomposition": {
             "gross_pnl": round(gross_pnl, 2),
             "transaction_charges": round(total_charges, 2),
@@ -222,7 +226,7 @@ async def get_probability_calibration(
 
     calibration_buckets: list[dict[str, Any]] = []
     for label, low, high in buckets_def:
-        b_trades = [t for t in trades if low <= t.predicted_probability < high]
+        b_trades = [t for t in trades if t.predicted_probability is not None and low <= t.predicted_probability < high]
         count = len(b_trades)
         wins = sum(1 for t in b_trades if t.net_pnl > 0)
         win_rate = (wins / count * 100.0) if count > 0 else 0.0

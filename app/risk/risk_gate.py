@@ -100,7 +100,8 @@ class RiskGate:
             )
 
         # 6. Max Drawdown Limit (10.0% halt)
-        max_dd_limit = self.config.get("limits", {}).get("max_drawdown_limit_pct", 10.0)
+        limits_cfg = self.config.get("limits", {})
+        max_dd_limit = limits_cfg.get("max_drawdown_pct", limits_cfg.get("max_drawdown_limit_pct", 10.0))
         if current_drawdown_pct >= max_dd_limit:
             return RiskDecision(
                 allowed=False,
@@ -109,7 +110,7 @@ class RiskGate:
             )
 
         # 7. Sector Concentration Limit (40.0% cap)
-        max_sector_limit = self.config.get("limits", {}).get("sector_exposure_cap_pct", 40.0)
+        max_sector_limit = limits_cfg.get("max_sector_exposure_pct", limits_cfg.get("sector_exposure_cap_pct", 40.0))
         if sector_exposure_pct >= max_sector_limit:
             return RiskDecision(
                 allowed=False,
@@ -126,3 +127,61 @@ class RiskGate:
             )
 
         return RiskDecision(allowed=True, action="ALLOW")
+
+    def evaluate_for_account(
+        self,
+        account_id: str,
+        current_time_ist: time,
+        stale_tick_seconds: float = 0.0,
+        proposed_symbol: str | None = None,
+        proposed_sector: str | None = None,
+        proposed_cost: float = 0.0,
+    ) -> RiskDecision:
+        """Authoritatively evaluate risk limits derived directly from runtime portfolio and ledger state."""
+        from datetime import UTC, datetime, timedelta
+
+        from app.api.accounts import SYSTEM_HALTED
+        from app.feed.instruments import InstrumentMaster
+        from app.portfolio.account import portfolio_accounts
+        from app.portfolio.ledger import global_trade_ledger
+
+        acct = portfolio_accounts.get(account_id)
+        if not acct:
+            return RiskDecision(allowed=False, action="REJECT", reason=f"ACCOUNT_NOT_FOUND_{account_id}")
+
+        # Compute rolling 7-day weekly realized P&L
+        now = datetime.now(UTC)
+        seven_days_ago = now - timedelta(days=7)
+        past_trades = global_trade_ledger.list_trades_for_account(account_id, limit=500)
+        weekly_pnl = sum(
+            t.net_pnl for t in past_trades
+            if hasattr(t, "exit_timestamp") and t.exit_timestamp >= seven_days_ago
+        )
+
+        # Compute sector exposure
+        sector_val = 0.0
+        master = InstrumentMaster()
+        for sym, pos in acct.positions.items():
+            inst = master.get_by_symbol(sym)
+            if inst and proposed_sector and inst.sector == proposed_sector:
+                sector_val += pos.market_value
+
+        if proposed_sector:
+            sector_val += proposed_cost
+
+        sector_pct = (sector_val / acct.equity * 100.0) if acct.equity > 0 else 0.0
+
+        return self.evaluate_entry(
+            account_id=account_id,
+            starting_capital=acct.starting_capital,
+            current_equity=acct.equity,
+            day_pnl=acct.realized_pnl,
+            current_time_ist=current_time_ist,
+            stale_tick_seconds=stale_tick_seconds,
+            kill_switch_active=SYSTEM_HALTED,
+            current_open_positions=len(acct.positions),
+            max_open_positions=acct.max_positions,
+            weekly_pnl=weekly_pnl,
+            current_drawdown_pct=acct.drawdown_pct,
+            sector_exposure_pct=sector_pct,
+        )

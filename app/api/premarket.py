@@ -13,15 +13,26 @@ VALID_ACCOUNTS = {"tiny", "real5k", "shadow"}
 @router.get("/report")
 async def get_premarket_report(
     account: str = Query("real5k"),
+    demo: bool = Query(False),
 ) -> dict[str, Any]:
-    """Retrieve 08:30 – 09:10 AM Pre-Market Watchlist and quantitative filtering briefing."""
+    """Retrieve 08:30 – 09:10 AM Pre-Market Watchlist.
+
+    Fails closed with 503 PREMARKET_UNAVAILABLE unless genuine live pre-open auction
+    feed is connected, or demo=true is explicitly requested for synthetic testing.
+    """
     if account not in VALID_ACCOUNTS:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid account '{account}'. Must be one of: {sorted(VALID_ACCOUNTS)}",
         )
 
-    # In production, nifty_gap_pct and india_vix are extracted from live Groww ticks
+    if not demo:
+        raise HTTPException(
+            status_code=503,
+            detail="PREMARKET_UNAVAILABLE: Genuine NSE pre-open auction market data feed is not connected. Pre-market rankings and EV entry decisions are unavailable in live mode.",
+        )
+
+    # Isolated synthetic diagnostic report for development/demo only
     report: PreMarketReport = global_premarket_scanner.generate_report(
         account_id=account,
         nifty_gap_pct=0.45,
@@ -30,6 +41,9 @@ async def get_premarket_report(
 
     return {
         "status": "ok",
+        "environment": report.environment,
+        "data_status": report.data_status,
+        "entry_decisions_enabled": report.entry_decisions_enabled,
         "evaluated_at": report.evaluated_at,
         "account_id": report.account_id,
         "account_capital": report.account_capital,

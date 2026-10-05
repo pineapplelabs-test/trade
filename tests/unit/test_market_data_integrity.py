@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from app.execution_sim.engine import ExecutionSimulator, OrderSide, SimulatedOrder
+from app.execution_sim.profiles import ExecutionProfile, ProfileMode
 from app.feed.base import DepthLevel, MarketTick, OrderBookDepth
 from app.feed.calendar import get_market_session_phase, is_trading_day
 from app.feed.provider import DemoMarketDataProvider
@@ -178,7 +179,7 @@ def test_execution_simulator_blocks_on_empty_or_shallow_depth():
 
 def test_execution_simulator_respects_simulated_latency():
     """Rule 8: Verify execution timestamp is decision timestamp + latency."""
-    sim = ExecutionSimulator()
+    sim = ExecutionSimulator(profile=ExecutionProfile(mode=ProfileMode.NORMAL, latency_ms=500, rejection_rate=0.0))
     now = datetime.now(UTC)
 
     order = SimulatedOrder(

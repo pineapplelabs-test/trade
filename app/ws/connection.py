@@ -3,7 +3,7 @@
 import asyncio
 import json
 import zoneinfo
-from datetime import UTC, datetime
+from datetime import UTC, datetime, time
 
 import structlog
 from fastapi import WebSocket
@@ -82,6 +82,49 @@ class ConnectionManager:
                         sample_quote_age = round(max(0.0, delta), 1)
                         sample_depth_age = round(max(0.0, delta), 1)
 
+                from app.portfolio.account import portfolio_accounts
+
+                # Update open position prices from latest ticks
+                if settings.FEED_MODE == "groww":
+                    try:
+                        from app.feed.groww_feed import groww_feed
+                        for acct in portfolio_accounts.values():
+                            for sym in acct.positions:
+                                if sym in groww_feed.latest_ticks:
+                                    acct.update_market_price(sym, groww_feed.latest_ticks[sym].last_price)
+                    except Exception as err:
+                        logger.debug("ws_position_price_update_error", error=str(err))
+
+                accounts_payload = {}
+                open_positions_payload = []
+                for acct_id, acct in portfolio_accounts.items():
+                    day_pnl = round(acct.equity - acct.starting_capital, 2)
+                    accounts_payload[acct_id] = {
+                        "equity": acct.equity,
+                        "day_pnl": day_pnl,
+                        "cash": acct.cash,
+                        "open_positions": len(acct.positions),
+                        "unrealized_pnl": acct.total_unrealized_pnl,
+                        "realized_pnl": acct.realized_pnl,
+                    }
+                    for sym, pos in acct.positions.items():
+                        open_positions_payload.append({
+                            "account_id": acct_id,
+                            "symbol": sym,
+                            "quantity": pos.quantity,
+                            "entry_price": pos.entry_price,
+                            "current_price": pos.current_price,
+                            "stop_price": pos.stop_price,
+                            "target_price": pos.target_price,
+                            "unrealized_pnl": pos.unrealized_pnl,
+                            "unrealized_pnl_pct": pos.unrealized_pnl_pct,
+                            "opened_at": pos.opened_at.isoformat() if pos.opened_at else None,
+                        })
+
+                # Time window status
+                in_force_flat_window = time(15, 15) <= now_ist.time() < time(15, 30)
+                market_open = time(9, 15) <= now_ist.time() < time(15, 30)
+
                 payload = {
                     "type": "snapshot",
                     "ts": now_utc.isoformat(),
@@ -91,13 +134,14 @@ class ConnectionManager:
                     "quote_age_ms": sample_quote_age,
                     "depth_age_ms": sample_depth_age,
                     "quality_status": "STALE" if sample_quote_age > 3000.0 else "VALID",
-                    "accounts": {
-                        "real5k": {"equity": 5000.0, "day_pnl": 0.0, "cash": 5000.0},
-                        "tiny": {"equity": 1000.0, "day_pnl": 0.0, "cash": 1000.0},
-                        "shadow": {"equity": 100000.0, "day_pnl": 0.0, "cash": 100000.0},
+                    "market_session": {
+                        "is_open": market_open,
+                        "force_flat_window": in_force_flat_window,
+                        "force_flat_cutoff": "15:15:00 IST",
                     },
+                    "accounts": accounts_payload,
                     "scanner": scanner_items,
-                    "positions": [],
+                    "positions": open_positions_payload,
                     "events": [],
                 }
                 await self.broadcast(payload)

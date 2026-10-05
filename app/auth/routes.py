@@ -18,6 +18,7 @@ class LoginRequest(BaseModel):
 class AuthStatusResponse(BaseModel):
     authenticated: bool
     username: str | None = None
+    role: str | None = None
 
 
 @router.post("/login")
@@ -29,13 +30,14 @@ async def login(req: LoginRequest, response: Response) -> dict[str, str]:
             detail="Invalid username or password",
         )
 
-    cookie_val = create_session_token(req.username)
+    cookie_val = create_session_token(req.username, role="operator")
+    is_secure = settings.ENVIRONMENT.lower() in {"production", "prod"} or settings.COOKIE_SECURE
     response.set_cookie(
         key="paperdesk_session",
         value=cookie_val,
         httponly=True,
         samesite="lax",
-        secure=False,  # Set to True behind HTTPS in production Caddy
+        secure=is_secure,
         max_age=60 * 60 * 24 * 7,  # 7 days
     )
     return {"status": "ok", "message": "Logged in successfully"}
@@ -54,9 +56,9 @@ async def auth_status(
 ) -> AuthStatusResponse:
     """Check current authentication status by verifying session cookie."""
     if not session_token:
-        return AuthStatusResponse(authenticated=False, username=None)
+        return AuthStatusResponse(authenticated=False, username=None, role=None)
     try:
-        username = verify_session_token(session_token)
-        return AuthStatusResponse(authenticated=True, username=username)
+        username, role = verify_session_token(session_token)
+        return AuthStatusResponse(authenticated=True, username=username, role=role)
     except Exception:
-        return AuthStatusResponse(authenticated=False, username=None)
+        return AuthStatusResponse(authenticated=False, username=None, role=None)

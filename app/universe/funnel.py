@@ -55,6 +55,15 @@ class UniverseFunnel:
         sym = instrument.symbol
         price = tick.last_price
 
+        # Stage 0: Equity Series Verification (Cash EQ only, reject Indices and other series)
+        if getattr(instrument, "series", "EQ") != "EQ" or getattr(instrument, "instrument_type", "EQUITY") != "EQUITY":
+            return FunnelResult(
+                sym,
+                False,
+                "SERIES_REJECTED",
+                f"Non-cash equity series '{getattr(instrument, 'series', '')}' (only EQ permitted)",
+            )
+
         # Stage 1: Active status & Surveillance filter (ASM / GSM)
         if not instrument.active:
             return FunnelResult(sym, False, "INSTRUMENT_STATUS", "Instrument inactive")
@@ -69,18 +78,39 @@ class UniverseFunnel:
         if price > self.config.max_price:
             return FunnelResult(sym, False, "PRICE_CEILING", f"Price ₹{price:.2f} above maximum ₹{self.config.max_price:.2f}")
 
-        # Stage 3: Account capital affordability (Small account rule)
-        # Position cannot exceed capital * max_position_pct, so at least 1 share must be affordable
+        # Stage 3: Account capital affordability (Small account rule: pure integer shares)
+        # Position cannot exceed capital * max_position_pct, so at least 1 whole share must be affordable
         max_position_cash = account_capital * self.config.max_position_pct
-        if price > max_position_cash:
+        affordable_shares = int(max_position_cash // price) if price > 0 else 0
+        if affordable_shares < 1:
             return FunnelResult(
                 sym,
                 False,
                 "AFFORDABILITY",
-                f"Unaffordable: share price ₹{price:.2f} exceeds position cap ₹{max_position_cash:.2f} (capital ₹{account_capital:.2f})",
+                f"Unaffordable: share price ₹{price:.2f} exceeds position cap ₹{max_position_cash:.2f} (0 whole shares affordable for capital ₹{account_capital:.2f})",
             )
 
-        # Stage 4: Bid-Ask Spread check
+        # Stage 4: Liquidity — Minimum Volume
+        if tick.volume < self.config.min_volume:
+            return FunnelResult(
+                sym,
+                False,
+                "LIQUIDITY_REJECTED",
+                f"Volume {tick.volume} below minimum threshold {self.config.min_volume}",
+            )
+
+        # Stage 5: Liquidity — Minimum Daily Turnover
+        avg_price = tick.average_traded_price if tick.average_traded_price > 0 else price
+        turnover_cr = round((tick.volume * avg_price) / 10000000.0, 4)
+        if turnover_cr < self.config.min_turnover_cr:
+            return FunnelResult(
+                sym,
+                False,
+                "LIQUIDITY_REJECTED",
+                f"Turnover ₹{turnover_cr:.2f}Cr below minimum ₹{self.config.min_turnover_cr:.2f}Cr",
+            )
+
+        # Stage 6: Bid-Ask Spread check
         spread_pct = tick.depth.spread_pct
         if spread_pct > self.config.max_spread_pct:
             return FunnelResult(
@@ -90,7 +120,7 @@ class UniverseFunnel:
                 f"Spread {spread_pct * 100:.3f}% exceeds maximum threshold {self.config.max_spread_pct * 100:.3f}%",
             )
 
-        # Stage 5: Circuit Limit check
+        # Stage 7: Circuit Limit check
         if self.config.exclude_circuits:
             if upper_circuit and price >= upper_circuit - 0.05:
                 return FunnelResult(sym, False, "CIRCUIT_LIMIT", f"At or near Upper Circuit limit ₹{upper_circuit:.2f}")

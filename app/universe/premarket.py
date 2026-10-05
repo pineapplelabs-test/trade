@@ -45,7 +45,7 @@ class FocusCandidate:
     planned_stop: float
     planned_target: float
     reward_risk_ratio: float
-    estimated_ev_pct: float
+    estimated_ev_pct: float | None
     selection_reason: str
 
 
@@ -70,6 +70,9 @@ class PreMarketReport:
     passed_affordability: int
     focus_candidates: list[FocusCandidate]
     quarantined_stocks: list[QuarantinedStock]
+    environment: str = "DEMO"
+    data_status: str = "SYNTHETIC_SAMPLE"
+    entry_decisions_enabled: bool = False
 
 
 # Expanded representative universe of NSE listed equities (including large, mid, small, micro, and surveillance)
@@ -116,9 +119,12 @@ class PreMarketScanner:
         india_vix: float = 13.20,
     ) -> PreMarketReport:
         """Run the 4-stage pre-market screening funnel."""
-        acct_cfg = self.ACCOUNT_ALLOCATION_CAPS.get(account_id, {"capital": 5000.0, "max_price": 1500.0})
-        capital = acct_cfg["capital"]
-        max_price = acct_cfg["max_price"]
+        from app.config import get_account_spec
+
+        spec = get_account_spec(account_id)
+        capital = float(spec.get("starting_capital", 5000.0))
+        max_pos_pct = float(spec.get("max_position_pct", 50.0)) / 100.0
+        max_price = round(capital * max_pos_pct, 2)
 
         quarantined: list[QuarantinedStock] = []
         tradable_survivors: list[PreMarketStockData] = []
@@ -147,11 +153,11 @@ class PreMarketScanner:
             tradable_survivors.append(stock)
 
             # Stage 2: Account Affordability
-            if stock.discovered_price > max_price:
+            if stock.discovered_price > max_price or int(max_price // stock.discovered_price) < 1:
                 quarantined.append(
                     QuarantinedStock(
                         stock.symbol,
-                        f"Price ₹{stock.discovered_price:.2f} exceeds account allocation cap ₹{max_price:.2f}",
+                        f"Price ₹{stock.discovered_price:.2f} exceeds account allocation cap ₹{max_price:.2f} (0 shares affordable)",
                         "UNAFFORDABLE",
                     )
                 )
@@ -184,9 +190,11 @@ class PreMarketScanner:
             gap_pct = round(((stock.discovered_price - stock.prev_close) / stock.prev_close) * 100.0, 2)
             atr_pct = round((stock.atr_14 / stock.discovered_price) * 100.0, 2)
 
-            # Position sizing for account
-            max_alloc = capital * 0.40  # 40% position limit
-            shares = max(1, int(max_alloc // stock.discovered_price))
+            # Strict integer shares: reject if 0 shares affordable
+            max_alloc = capital * max_pos_pct
+            shares = int(max_alloc // stock.discovered_price) if stock.discovered_price > 0 else 0
+            if shares < 1:
+                continue
 
             planned_entry = round(stock.discovered_price, 2)
             stop_dist = round(1.5 * stock.atr_14, 2)
@@ -195,9 +203,9 @@ class PreMarketScanner:
             planned_target = round(planned_entry + target_dist, 2)
             rr_ratio = round(target_dist / stop_dist, 2) if stop_dist > 0 else 1.67
 
-            # Estimated Net EV based on clean gap + RVOL expectation
-            ev_pct = round(0.18 + (gap_pct * 0.05), 2)
-            reason = f"+{gap_pct}% Pre-Open Gap, ₹{stock.atr_14:.2f} ATR (1.5x stop buffer), ₹{stock.turnover_cr:.0f}Cr turnover"
+            # EV is unavailable until an empirical calibrated probability model is validated
+            ev_pct = None
+            reason = f"+{gap_pct}% Pre-Open Gap, ₹{stock.atr_14:.2f} ATR (1.5x stop buffer), ₹{stock.turnover_cr:.0f}Cr turnover (uncalibrated - entry disabled)"
 
             focus_list.append(
                 FocusCandidate(

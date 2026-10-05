@@ -23,6 +23,8 @@ class FeeSchedule:
     sebi_rate_per_crore: float = 10.0        # ₹10 per crore
     gst_rate_pct: float = 0.18               # 18% on (brokerage + exchange + sebi)
     stamp_duty_rate_pct: float = 0.00003     # 0.003% on buy turnover
+    provenance: str = "OFFICIAL_NSE_CIRCULAR_2024_OCT"
+    verified: bool = True
 
 
 # Official Zerodha / NSE default schedule (effective from 2024-10-01)
@@ -38,4 +40,6 @@ DEFAULT_FEE_SCHEDULE = FeeSchedule(
     sebi_rate_per_crore=10.0,
     gst_rate_pct=0.18,
     stamp_duty_rate_pct=0.00003,
+    provenance="OFFICIAL_NSE_CIRCULAR_2024_OCT",
+    verified=True,
 )

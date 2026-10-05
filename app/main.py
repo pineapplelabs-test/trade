@@ -73,12 +73,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Strict CORS: Same origin by default
+# Strict CORS: Explicit configurable allowlist (wildcards forbidden with credentials)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Same-origin or local dev
+    allow_origins=settings.CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 

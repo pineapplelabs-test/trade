@@ -117,7 +117,7 @@ class TradeRecord:
     fee_breakdown: DetailedFeeBreakdown | None = None
     audit_timeline: list[AuditEvent] = field(default_factory=list)
     environment: str = "PAPER_LIVE"   # "DEMO" vs "PAPER_LIVE"
-    predicted_probability: float = 0.50
+    predicted_probability: float | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -199,10 +199,13 @@ class TradeLedger:
             # Ensure account exists in DB for foreign key integrity
             acct_res = await session.execute(select(Account).where(Account.id == trade.account_id))
             if acct_res.scalar_one_or_none() is None:
+                from app.config import get_account_spec
+
+                spec = get_account_spec(trade.account_id)
                 new_acct = Account(
                     id=trade.account_id,
                     name=trade.account_id.capitalize(),
-                    starting_capital=1000.0 if trade.account_id == "tiny" else 100000.0,
+                    starting_capital=float(spec.get("starting_capital", 1000.0)),
                     config_json="{}",
                 )
                 session.add(new_acct)
@@ -330,19 +333,24 @@ class TradeLedger:
                     )
                     session.add(durable_fb)
 
-            # 5. Audit Timeline
+            # 5. Audit Timeline (Idempotent: skip existing event IDs)
             for event in trade.audit_timeline:
-                durable_event = DurableAuditEvent(
-                    event_id=f"EVT-{trade.trade_id}-{event.seq}",
-                    timestamp=event.timestamp,
-                    account_id=trade.account_id,
-                    symbol=trade.symbol,
-                    trade_id=trade.trade_id,
-                    event_type=event.event_name,
-                    data_json=json.dumps(event.metadata),
-                    reason=event.description,
+                evt_id = f"EVT-{trade.trade_id}-{event.seq}"
+                existing_evt_res = await session.execute(
+                    select(DurableAuditEvent).where(DurableAuditEvent.event_id == evt_id)
                 )
-                session.add(durable_event)
+                if existing_evt_res.scalar_one_or_none() is None:
+                    durable_event = DurableAuditEvent(
+                        event_id=evt_id,
+                        timestamp=event.timestamp,
+                        account_id=trade.account_id,
+                        symbol=trade.symbol,
+                        trade_id=trade.trade_id,
+                        event_type=event.event_name,
+                        data_json=json.dumps(event.metadata),
+                        reason=event.description,
+                    )
+                    session.add(durable_event)
 
             await session.commit()
 
@@ -539,13 +547,15 @@ class TradeLedger:
                 if dt.trade_status in ("OPEN", "FILLED"):
                     acct = portfolio_accounts.get(dt.account_id)
                     if acct and dt.symbol not in acct.positions:
+                        restored_stop = round(dt.entry_price - 1.5 * snap.atr, 2) if (snap and snap.atr and snap.atr > 0) else 0.0
+                        restored_target = round(dt.entry_price + 2.5 * snap.atr, 2) if (snap and snap.atr and snap.atr > 0) else 0.0
                         acct.restore_position(
                             symbol=dt.symbol,
                             quantity=dt.quantity,
                             entry_price=dt.entry_price,
                             current_price=dt.entry_price,
-                            stop_price=round(dt.entry_price * 0.98, 2),
-                            target_price=round(dt.entry_price * 1.04, 2),
+                            stop_price=restored_stop,
+                            target_price=restored_target,
                             opened_at=dt.entry_timestamp,
                         )
 

@@ -371,8 +371,8 @@ async function refreshScanner() {
           existing.price = cand.price;
           existing.change = cand.change;
           if (cand.score !== undefined) existing.score = cand.score;
-          if (cand.win_chance !== undefined) existing.win_prob = cand.win_chance;
-          if (cand.ev_pct !== undefined) existing.ev = cand.ev_pct;
+          existing.win_prob = cand.win_chance !== undefined ? cand.win_chance : null;
+          existing.ev = cand.ev_pct !== undefined ? cand.ev_pct : null;
           if (cand.rvol !== undefined) existing.rvol = cand.rvol;
           if (cand.obi !== undefined) existing.obi = cand.obi;
           if (cand.action !== undefined) existing.action = cand.action;
@@ -382,14 +382,16 @@ async function refreshScanner() {
         }
       });
       renderScannerTable();
+      updateHeroCards();
       const current = state.stocks.find((s) => s.symbol === state.selectedSymbol);
       if (current) updateDepthMatrix(current);
 
-      // Section 19: Agent Mind reports actual live data & indicators
-      const featured = data.candidates[Math.floor(Math.random() * data.candidates.length)];
+      // Section 19: Agent Mind reports actual live data & indicators (deterministic top candidate)
+      const featured = data.candidates && data.candidates.length > 0 ? data.candidates[0] : null;
       if (featured) {
         const tag = featured.action === "Enter" ? "Approved" : (featured.action === "Blocked" ? "Blocked" : (featured.action === "Skip" ? "Risk" : "Watching"));
-        const reason = featured.rejection_reason || featured.reason || `RVOL ${featured.rvol}x | OBI ${featured.obi > 0 ? "+" : ""}${featured.obi} | Net EV ${featured.ev_pct}% (Hurdle ${data.ev_hurdle}%)`;
+        const evDisplay = featured.ev_pct !== null && featured.ev_pct !== undefined ? `Net EV ${featured.ev_pct}%` : "EV Uncalibrated";
+        const reason = featured.rejection_reason || featured.reason || `RVOL ${featured.rvol}x | OBI ${featured.obi > 0 ? "+" : ""}${featured.obi} | ${evDisplay}`;
         addAgentLog({ symbol: featured.symbol, tag, reason, time: timeStr });
       }
     }
@@ -403,11 +405,27 @@ async function refreshScanner() {
       if (elMonitored) elMonitored.textContent = data.funnel_stats.monitored;
       if (elLiquid) elLiquid.textContent = data.funnel_stats.liquid;
       if (elSignals) elSignals.textContent = data.funnel_stats.approved;
-      if (elLatency) elLatency.textContent = `${(8 + Math.random() * 5).toFixed(1)} ms`;
+      if (elLatency) elLatency.textContent = data.cycle_time_ms ? `${data.cycle_time_ms.toFixed(1)} ms` : "realtime";
     }
   } catch (err) {
     console.debug("refreshScanner fetch error:", err);
   }
+}
+
+function updateHeroCards() {
+  dom.heroCards.forEach(card => {
+    const sym = card.getAttribute("data-symbol");
+    const stock = state.stocks.find(s => s.symbol === sym);
+    if (!stock) return;
+    const priceEl = card.querySelector(".card-price");
+    const changeEl = card.querySelector(".card-change");
+    if (priceEl && stock.price > 0) priceEl.textContent = `₹${stock.price.toFixed(2)}`;
+    if (changeEl) {
+      const isPos = stock.change >= 0;
+      changeEl.textContent = `${isPos ? "+" : ""}${stock.change.toFixed(2)}%`;
+      changeEl.className = `card-change font-mono ${isPos ? "positive" : "negative"}`;
+    }
+  });
 }
 
 // Core Handlers
@@ -955,6 +973,14 @@ async function loadPreMarketReport() {
 
   try {
     const res = await fetch(`/api/premarket/report?account=${state.currentAccount}`);
+    if (res.status === 503) {
+      const errData = await res.json().catch(() => ({}));
+      tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 24px;">
+        <div style="font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">PRE-MARKET AUCTION FEED UNAVAILABLE</div>
+        <div style="font-size: 12px; color: var(--text-muted);">${errData.detail || "Live 09:00–09:08 pre-open auction order book is not provided by broker feed adapter. Synthetic test report available via ?demo=true."}</div>
+      </td></tr>`;
+      return;
+    }
     if (!res.ok) return;
     const data = await res.json();
 
@@ -997,6 +1023,9 @@ async function loadPreMarketReport() {
       const rankBadge = c.rank === 1 ? `<span class="premarket-rank-badge premarket-rank-1">#1</span>` : `<span class="premarket-rank-badge">#${c.rank}</span>`;
       const gapSign = c.gap_pct >= 0 ? "+" : "";
       const gapClass = c.gap_pct >= 0 ? "positive" : "negative";
+      const evCell = c.estimated_ev_pct !== null && c.estimated_ev_pct !== undefined
+        ? `+${c.estimated_ev_pct.toFixed(2)}%`
+        : '<span class="badge-neutral" title="Uncalibrated model">UNAVAILABLE</span>';
 
       return `
         <tr>
@@ -1012,7 +1041,7 @@ async function loadPreMarketReport() {
           <td class="font-mono negative">₹${c.planned_stop.toFixed(2)}</td>
           <td class="font-mono positive">₹${c.planned_target.toFixed(2)}</td>
           <td class="font-mono">${c.max_affordable_shares} sh</td>
-          <td class="font-mono positive font-bold">+${c.estimated_ev_pct.toFixed(2)}%</td>
+          <td class="font-mono positive font-bold">${evCell}</td>
           <td><span class="reason-tag">${c.selection_reason}</span></td>
         </tr>
       `;

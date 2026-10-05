@@ -165,14 +165,26 @@ def test_premarket_report_generation() -> None:
     assert top.planned_entry > top.planned_stop
     assert top.planned_target > top.planned_entry
     assert top.reward_risk_ratio >= 1.5
-    assert top.estimated_ev_pct > 0.0
+    assert top.estimated_ev_pct is None  # Uncalibrated model: EV must not be fabricated
+    assert report.environment == "DEMO"
+    assert report.data_status == "SYNTHETIC_SAMPLE"
+    assert report.entry_decisions_enabled is False
 
 
 @pytest.mark.asyncio
 async def test_premarket_api_endpoint() -> None:
-    res = await get_premarket_report(account="real5k")
+    # 1. Live call fails closed with 503 because live pre-market auction data is unavailable
+    from fastapi import HTTPException
+    with pytest.raises(HTTPException) as exc_info:
+        await get_premarket_report(account="real5k", demo=False)
+    assert exc_info.value.status_code == 503
+
+    # 2. Demo call returns synthetic report with explicit DEMO labelling
+    res = await get_premarket_report(account="real5k", demo=True)
     assert res["status"] == "ok"
     assert res["account_id"] == "real5k"
+    assert res["environment"] == "DEMO"
+    assert res["entry_decisions_enabled"] is False
     assert "focus_candidates" in res
     assert len(res["focus_candidates"]) > 0
     top = res["focus_candidates"][0]
@@ -180,3 +192,4 @@ async def test_premarket_api_endpoint() -> None:
     assert "planned_entry" in top
     assert "planned_stop" in top
     assert "planned_target" in top
+    assert top["estimated_ev_pct"] is None

@@ -91,8 +91,8 @@ class PortfolioAccount:
         pos = self.positions.pop(symbol, None)
         if not pos:
             return None
-        proceeds = pos.quantity * exit_price
-        self.cash = round(self.cash + proceeds + (net_pnl - pos.unrealized_pnl), 2)
+        cost_basis = pos.quantity * pos.entry_price
+        self.cash = round(self.cash + cost_basis + net_pnl, 2)
         self.realized_pnl = round(self.realized_pnl + net_pnl, 2)
         return pos
 
@@ -130,9 +130,26 @@ class PortfolioAccount:
                 self.peak_equity = eq
 
 
+def init_portfolio_accounts() -> dict[str, PortfolioAccount]:
+    """Initialize portfolio accounts using single source of truth accounts.yaml."""
+    from app.config import get_accounts_config
+
+    accts_cfg = get_accounts_config()
+    res: dict[str, PortfolioAccount] = {}
+    for acct_id, spec in accts_cfg.items():
+        res[acct_id] = PortfolioAccount(
+            account_id=acct_id,
+            starting_capital=float(spec.get("starting_capital", 1000.0)),
+            max_positions=int(spec.get("max_open_positions", 2)),
+        )
+    if not res:
+        res = {
+            "tiny": PortfolioAccount("tiny", starting_capital=1000.0, max_positions=2),
+            "shadow": PortfolioAccount("shadow", starting_capital=100000.0, max_positions=5),
+            "real5k": PortfolioAccount("real5k", starting_capital=5000.0, max_positions=2),
+        }
+    return res
+
+
 # Global in-memory portfolio registry for runtime paper accounts
-portfolio_accounts: dict[str, PortfolioAccount] = {
-    "tiny": PortfolioAccount("tiny", starting_capital=1000.0, max_positions=2),
-    "shadow": PortfolioAccount("shadow", starting_capital=100000.0, max_positions=5),
-    "real5k": PortfolioAccount("real5k", starting_capital=5000.0, max_positions=2),
-}
+portfolio_accounts: dict[str, PortfolioAccount] = init_portfolio_accounts()

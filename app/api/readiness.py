@@ -308,13 +308,64 @@ async def get_premarket_readiness() -> dict[str, Any]:
     except Exception as e:
         checks["PAPER-ONLY SAFETY"] = {"status": "FAIL", "detail": str(e)}
 
-    # Overall Status Calculation
+    # Categorise checks
+    software_keys = {
+        "DATABASE",
+        "PERSISTENCE",
+        "RESTART RECOVERY",
+        "PAPER-ONLY SAFETY",
+        "TINY ACCOUNT",
+        "SHADOW ACCOUNT",
+        "FEE ENGINE",
+        "EXECUTION SIM",
+        "AUDIT LOG",
+        "TRADE LEDGER",
+        "RISK ENGINE",
+    }
+    market_data_keys = {
+        "GROWW CONNECTION",
+        "QUOTE STREAM",
+        "5-LEVEL DEPTH",
+        "TIMESTAMP VALIDATION",
+        "DATA FRESHNESS",
+        "UNIVERSE FUNNEL",
+        "INDICATORS",
+    }
+
+    software_checks = {k: checks[k] for k in software_keys if k in checks}
+    market_data_checks = {k: checks[k] for k in market_data_keys if k in checks}
+
+    software_passed = all(v["status"] == "PASS" for v in software_checks.values())
+    market_data_passed = all(v["status"] == "PASS" for v in market_data_checks.values())
+
+    software_readiness = {
+        "status": "PASS" if software_passed else "FAIL",
+        "passed": software_passed,
+        "total": len(software_checks),
+        "passed_count": sum(1 for v in software_checks.values() if v["status"] == "PASS"),
+        "checks": software_checks,
+    }
+
+    market_data_readiness = {
+        "status": "PASS" if market_data_passed else "FAIL",
+        "passed": market_data_passed,
+        "total": len(market_data_checks),
+        "passed_count": sum(1 for v in market_data_checks.values() if v["status"] == "PASS"),
+        "checks": market_data_checks,
+    }
+
     all_passed = all(v["status"] == "PASS" for v in checks.values())
     total_checks = len(checks)
     passed_checks = sum(1 for v in checks.values() if v["status"] == "PASS")
     failed_checks = total_checks - passed_checks
-
     overall_status = "PAPER DESK READY" if all_passed else "PAPER DESK NOT READY"
+
+    trading_decision_readiness = {
+        "status": "DISABLED",
+        "allowed": False,
+        "reason": "NO_CALIBRATED_PROBABILITY_MODEL",
+        "detail": "Automated entries disabled until out-of-sample LightGBM meta-labeling model is trained, purged, and calibrated (Section 8).",
+    }
 
     return {
         "overall_status": overall_status,
@@ -324,5 +375,8 @@ async def get_premarket_readiness() -> dict[str, Any]:
         "total_checks": total_checks,
         "passed_checks": passed_checks,
         "failed_checks": failed_checks,
+        "software_readiness": software_readiness,
+        "market_data_readiness": market_data_readiness,
+        "trading_decision_readiness": trading_decision_readiness,
         "checks": checks,
     }

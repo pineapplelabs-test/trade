@@ -73,10 +73,10 @@ class OrderBookDepth:
             return False, "Empty bids or asks in order book"
 
         for b in self.bids:
-            if b.price <= 0 or b.quantity < 0:
+            if b.price <= 0 or b.quantity <= 0:
                 return False, f"Invalid bid level price={b.price}, qty={b.quantity}"
         for a in self.asks:
-            if a.price <= 0 or a.quantity < 0:
+            if a.price <= 0 or a.quantity <= 0:
                 return False, f"Invalid ask level price={a.price}, qty={a.quantity}"
 
         # Monotonicity checks

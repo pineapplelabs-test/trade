@@ -46,6 +46,12 @@ class EVDecision:
     reason: str
 
 
+def calculate_break_even_win_rate(expected_loss: float, total_costs: float, expected_reward: float) -> float:
+    """Break-even win rate: p* = (L + C) / (W + L)."""
+    den = expected_reward + expected_loss
+    return (expected_loss + total_costs) / den if den > 0 else 1.0
+
+
 def calculate_expected_value(params: EVParameters) -> EVDecision:
     """Calculate Net EV and produce an auditable decision."""
     p = max(0.0, min(1.0, params.win_probability))
@@ -61,8 +67,11 @@ def calculate_expected_value(params: EVParameters) -> EVDecision:
     net_ev = gross_ev - c
 
     # Break-even win rate p* = (L + C) / (W + L)
-    den = w + loss_amt
-    break_even_p = (loss_amt + c) / den if den > 0 else 1.0
+    break_even_p = calculate_break_even_win_rate(
+        expected_loss=loss_amt,
+        total_costs=c,
+        expected_reward=w,
+    )
 
     if net_ev < hurdle:
         if net_ev < 0:
